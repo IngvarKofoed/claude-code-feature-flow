@@ -31,6 +31,12 @@ Then add a shell function so you can start a feature from any repo:
 feature-flow() { claude "/feature-flow $*"; }
 ```
 
+**Optional permission rule.** A builder copies your git-ignored local files (`.env`, local databases) into its worktree with `copy-local-files.sh`. Auto mode blocks copying secrets with a plain `cp`, but has allowed this script, which only copies ignored files into the same repo's own worktree. If it ever blocks the script too, the builder says which files it couldn't copy; this rule in `~/.claude/settings.json` allows the script and nothing else:
+
+```json
+{ "permissions": { "allow": ["Bash(/Users/<you>/.claude/skills/feature-flow/copy-local-files.sh *)"] } }
+```
+
 ## Use
 
 | You | What happens |

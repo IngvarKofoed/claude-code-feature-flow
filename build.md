@@ -31,9 +31,9 @@ You are the builder for one signed-off spec, running as a background session. Th
 
 - List what git ignores here: `git ls-files --others --ignored --exclude-standard --directory`.
 - **Pick** what the app or build needs and can't regenerate: `.env` files wherever they sit, local databases (with their `-wal` / `-shm` files), local dev data. **Leave out** `.claude/`, dependencies (`node_modules`, virtual envs, `bin`/`obj`, package caches), build output, logs and OS junk — dependencies get reinstalled in step 2.
-- Copy them with this skill's script — never with `cp` (auto mode blocks copying secrets by hand; the user allows this one script):
+- Copy them with this skill's script — never with `cp` (auto mode blocks copying secrets by hand, but has allowed this script, which only copies ignored files into this repo's own worktree):
   `<this skill's folder>/copy-local-files.sh <main checkout> <worktree path> <path>…`
-  It never overwrites a file the worktree already has, so a restarted builder keeps its copy. If the script itself is blocked, don't work around it: carry on without the files and say in the ready message which ones are missing and that the README's permission rule isn't set up.
+  It never overwrites a file the worktree already has, so a restarted builder keeps its copy. If the script itself is blocked, don't work around it: carry on without the files, and say in the ready message which ones are missing and that the README's optional permission rule would allow the script.
 - Then enter the worktree (above).
 
 ## 1. Orient
@@ -66,7 +66,7 @@ Never silently pick one reading of an ambiguous spec, and never ask about someth
 ## 5. Review and commit
 
 1. Run `/code-review high --fix` on the uncommitted diff, plus any extra gate the project's `CLAUDE.md` requires. Read what it changed.
-2. Commit everything (`git add -A` — ignored files you copied stay out) with a message in the repo's style, naming the feature.
+2. Commit everything (`git add -A` — ignored files you copied stay out) with a message in the repo's style, naming the feature, and ending with the line `Reviewed: /code-review high --fix`. That line is how a restarted builder knows the review ran; a build commit without it gets reviewed (against the sign-off commit) before anything else.
 3. `git fetch origin`, then `git merge origin/main`, then `git merge main`.
 4. A merge conflict's resolution is authored work: resolve it, run `/code-review high --fix` on the resolution, then commit.
 
