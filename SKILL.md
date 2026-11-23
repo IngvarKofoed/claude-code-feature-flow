@@ -7,7 +7,7 @@ description: One session per feature, from spec to main. Design mode (/feature-f
 
 One session per feature. The user designs the spec with you in **design mode**; a background session builds it in **build mode**; the user tests, gives feedback, and says **ship**. Everything between sign-off and testing runs without them, and they are pulled in only for decisions that are genuinely theirs.
 
-**Pick the mode from the arguments.** If the first word is `build`, you are the builder: read `build.md` in this skill's folder now and follow it — the rest of this file is the design side and the shared contract. Otherwise you are in design mode, and the arguments (possibly empty) are the topic.
+**Pick the mode from the arguments.** If the first word is `build`, you are the builder: the next two words are the worktree path and the spec path. Read `build.md` in this skill's folder now and follow it — the rest of this file is the design side and the shared contract. Otherwise you are in design mode, and the arguments (possibly empty) are the topic.
 
 The design is recorded in `docs/specs/2026-11-23-feature-flow.md` in this skill's folder. When this file and the spec disagree, this file wins; say so to the user.
 
@@ -17,10 +17,10 @@ Both modes rely on these, so neither may change them alone:
 
 - **One worktree per feature**, created by design mode with `EnterWorktree` and named after the spec's slug. Its branch is whatever `EnterWorktree` created (read it with `git branch --show-current`; don't assume a naming scheme).
 - **The spec commit is the sign-off.** Design mode commits the spec file alone on the worktree branch, with the message `Spec: <title>`, before launching the builder. The builder finds it as the commit that added the spec (`git log --diff-filter=A --format=%H -1 -- <spec-path>`), reads Outcome from it, and reports every spec change since it.
-- **The builder session** is started from the worktree root as
-  `claude --bg -n <repo>-<slug> --model opus "/feature-flow build <spec-path>"`
-  where `<repo>` is the main checkout's folder name and `<spec-path>` is repo-relative. No `--effort`: the user's own settings apply. The same command, run again from the worktree, restarts a builder that died.
-- **One session per checkout.** Design mode leaves the worktree before it ends, so the builder is the only session in it.
+- **The builder session** is started from the **main checkout** as
+  `claude --bg -n <repo>-<slug> --model opus "/feature-flow build <worktree-path> <spec-path>"`
+  where `<repo>` is the main checkout's folder name, `<worktree-path>` is the worktree's path relative to the main checkout (e.g. `.claude/worktrees/<slug>`), and `<spec-path>` is repo-relative. It starts in the main checkout because `claude --bg` refuses folders the user hasn't trusted, and a new worktree never has been; its first act is to move into the worktree with `EnterWorktree` (`path`). No `--effort`: the user's own settings apply. The same command, run again from the main checkout, restarts a builder that died.
+- **One session per checkout.** Design mode leaves the worktree before it ends, and the builder does nothing until it has moved into it, so the builder is the only session working there.
 
 ## Design mode
 
@@ -58,19 +58,19 @@ This picker offers sign-off, so under `/spec`'s rules it **is** a sign-off ask: 
 - **No decisions:** apply its fixes and "already decided" notes (per `/spec`), then **launch**.
 - **Decisions:** put them in one picker whose **last** question is *"Then:"* with **Build now (Recommended)** and **Hold**. At most three decisions per picker; more go in an earlier picker, and "Then:" is always the last question of the last one. On **Build now**, integrate the answers, do `/spec`'s quick check that the flagged items are resolved, and launch — no second sign-off: the answers plus Build now are the sign-off on the revised text. On **Hold**, integrate the answers and stay; launch later when the user says so.
 
-**5. After "Sign off, build later":** finish `/spec` normally (the review handled), then commit the spec (launch step 1), leave the worktree (`ExitWorktree`, keep), and print the launch command with the `cd` into the worktree. If the user later asks in this session to build it, run the launch from step 2.
+**5. After "Sign off, build later":** finish `/spec` normally (the review handled), then commit the spec (launch step 1), leave the worktree (`ExitWorktree`, keep), and print the launch command with the `cd` into the main checkout. If the user later asks in this session to build it, run the launch from step 2.
 
 **6. No closing offer before the review is handled** — `/spec`'s rule, and it covers the launch: never launch on a spec whose review hasn't returned.
 
 ### Launch
 
 1. In the worktree: `git add <spec-path>` and `git commit -m "Spec: <title>"`. Only the spec file — check `git status` first and leave anything else alone. This is a docs-only commit the user asked for by clicking; it takes no review question.
-2. From the worktree root, run the builder command from the contract. Use the Bash tool's working directory (you are in the worktree after `EnterWorktree`).
-3. Confirm it started: `claude agents --json` lists `<repo>-<slug>`, or the command printed a session id. If it failed, show the error and the exact command with `cd <worktree path> && …`, and stay in the worktree until the user says it's running; then continue with step 4.
+2. Run the builder command from the contract **in the main checkout**: `cd <main checkout> && claude --bg …` in one Bash call (the main checkout is the first entry of `git worktree list --porcelain`).
+3. Confirm it started: `claude agents --json` lists `<repo>-<slug>`, or the command printed a session id. If it failed, show the error and the exact command with its `cd`, and stay in the worktree until the user says it's running; then continue with step 4. A "workspace not trusted" error means the main checkout itself was never trusted: the user runs `claude` there once.
 4. `ExitWorktree` with action `keep`. The worktree must stay: the builder is in it.
 5. Tell the user, in three lines: it's building in the background as `<repo>-<slug>`; `claude attach <repo>-<slug>` shows it, and it will say when it's ready to test or needs them; this session is done and can be closed.
 
 ## Notes
 
 - **Picker wording.** Every question you put to the user says what the choice changes and, when it's not obvious, shows a short concrete example. Option labels stand on their own.
-- **Restarting a dead builder:** `cd <worktree> && claude --bg -n <repo>-<slug> --model opus "/feature-flow build <spec-path>"`. Build mode works out where it was from git.
+- **Restarting a dead builder:** `cd <main checkout> && claude --bg -n <repo>-<slug> --model opus "/feature-flow build <worktree-path> <spec-path>"`. Build mode works out where it was from git.

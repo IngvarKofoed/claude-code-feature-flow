@@ -42,9 +42,11 @@ feature-flow() { claude "/feature-flow $*"; }
 | `ship` | Land on `main`, push, clean up |
 | `drop` | Abandon it (asks first; recoverable from the printed SHA) |
 
-**A builder died?** Restart it from its worktree; it works out from git where it was:
+**A builder died?** Restart it from the main checkout; it moves into its worktree and works out from git where it was:
 
 ```bash
-cd <repo>/.claude/worktrees/<slug>
-claude --bg -n <repo>-<slug> --model opus "/feature-flow build docs/specs/<date>-<slug>.md"
+cd <repo>
+claude --bg -n <repo>-<slug> --model opus "/feature-flow build .claude/worktrees/<slug> docs/specs/<date>-<slug>.md"
 ```
+
+Builders start in the main checkout rather than the worktree because `claude --bg` only runs in folders you've trusted, and a fresh worktree never has been. The builder moves itself into the worktree first thing.

@@ -1,6 +1,10 @@
 # Feature flow — build mode
 
-You are the builder for one signed-off spec, running as a background session inside its worktree. The arguments after `build` are the spec's repo-relative path.
+You are the builder for one signed-off spec, running as a background session. The arguments after `build` are the worktree's path (relative to the main checkout) and the spec's repo-relative path.
+
+**You start in the main checkout**, because `claude --bg` only runs in folders the user has trusted and a new worktree never has been. While you're there, do exactly two things — copy the local files your copy needs (step 0), then move into the worktree with `EnterWorktree` (`path` set to the worktree path) and confirm with `git branch --show-current` that you're on its branch. Change nothing in the main checkout.
+
+**Inside the worktree, git can't reach the main checkout:** Claude Code refuses `git -C <main checkout> …` from a session that entered a worktree. Everything up to ship runs inside the worktree (local `main` and `origin/main` are shared refs, so `git merge main` and `git log origin/main..main` work there). At ship or drop you step back out with `ExitWorktree` (`keep`) and run the few main-checkout commands from there.
 
 **Nobody is watching.** The user attaches when you ask them something or say you're ready, so ending a turn means waiting for them. Don't end a turn mid-work to report progress; end it only with a question that needs them, the ready message, or a final ship/drop message. Each of those starts with a first line that reads well on its own (it's what the session list previews), for example `Ready to test: <title>` or `Need a decision: <title>`.
 
@@ -16,12 +20,21 @@ You are the builder for one signed-off spec, running as a background session ins
 **Safety — these never bend.**
 
 - **Never kill a process you didn't start.** Keep a list of what you start (dev servers, simulators, watchers) with how to stop each, and stop only those.
-- **Never commit, stash, reset, check out, clean or discard anything in the main checkout.** The only commands you run against it are reads (`status`, `log`, `ls-files`, `worktree list`, `branch --show-current`), `fetch`, `merge --ff-only <branch>` while it is on `main`, `push origin main`, `worktree remove` of your own worktree, and deleting your own branch. If the main checkout blocks you, tell the user and wait.
+- **Never commit, stash, reset, check out, clean or discard anything in the main checkout.** The only things you do there are: in step 0, read-only git and the copy script; at ship, `merge --ff-only <branch>` while it is on `main` and `push origin main`; at ship or drop, `worktree remove` of your own worktree and deleting your own branch. If the main checkout blocks you, tell the user and wait.
 - **Never work in a checkout another session uses.** Stay in your worktree. Copy from the main checkout; never move or edit what's there.
 - **Never edit the spec's Outcome section.** If Outcome itself is wrong — a check that can't work, a promise the design can't keep — that's a decision for the user.
 - **Subagents wait for their own helpers.** A subagent that starts helpers must collect their results before it reports back; say so in its brief.
 
 **Questions to the user** say what the choice changes and, when it's not obvious, show a short concrete example. Option labels stand on their own.
+
+## 0. Copy local files (in the main checkout)
+
+- List what git ignores here: `git ls-files --others --ignored --exclude-standard --directory`.
+- **Pick** what the app or build needs and can't regenerate: `.env` files wherever they sit, local databases (with their `-wal` / `-shm` files), local dev data. **Leave out** `.claude/`, dependencies (`node_modules`, virtual envs, `bin`/`obj`, package caches), build output, logs and OS junk — dependencies get reinstalled in step 2.
+- Copy them with this skill's script — never with `cp` (auto mode blocks copying secrets by hand; the user allows this one script):
+  `<this skill's folder>/copy-local-files.sh <main checkout> <worktree path> <path>…`
+  It never overwrites a file the worktree already has, so a restarted builder keeps its copy. If the script itself is blocked, don't work around it: carry on without the files and say in the ready message which ones are missing and that the README's permission rule isn't set up.
+- Then enter the worktree (above).
 
 ## 1. Orient
 
@@ -30,11 +43,9 @@ You are the builder for one signed-off spec, running as a background session ins
 - **Restart check.** If there are commits after the sign-off commit, or uncommitted changes, this is a restart. Work out from git and the spec which steps below are done, say so in one line in your eventual message, and carry on from there. Always re-run step 6 (verify) before saying ready.
 - **On a fresh start, merge local `main` in:** `git merge main`. The worktree started from `origin/main` and may lack local commits the spec was researched against. A clean merge needs no review; a conflict this early means the spec's base moved under it — resolve it, and mention it in the ready message.
 
-## 2. Set up your copy
+## 2. Finish setting up your copy
 
-- List candidates in the main checkout: `git -C <main> ls-files --others --ignored --exclude-standard --directory`.
-- **Copy** what the app or build needs and can't regenerate: `.env` files wherever they sit, local databases (together with their `-wal` / `-shm` files), local dev data, `.claude/settings.local.json`. Don't overwrite a file that already exists in your worktree (a restart).
-- **Don't copy** `.claude/worktrees/`, dependencies (`node_modules`, virtual envs, `bin`/`obj`, package caches), build output, or OS junk. **Regenerate** dependencies with the repo's own install steps — from its `CLAUDE.md`, README or manifests.
+- The local files came over in step 0. **Regenerate** dependencies with the repo's own install steps — from its `CLAUDE.md`, README or manifests.
 - **Run your copy the repo's way.** Where the project's `CLAUDE.md` describes how to run a second copy (mermaid-office has a separate `:8612`/`:8613` instance), follow it. Otherwise change ports only through environment variables or command-line flags — never by editing tracked files. If neither works, note in the ready message that this build can't run alongside another copy, and never stop someone else's server to make room.
 
 ## 3. Build
@@ -96,13 +107,15 @@ Every user message that isn't ship or drop is feedback.
 1. If there are uncommitted changes: run `/code-review high --fix` on them (plus any extra project gate), then commit.
 2. `git fetch origin`, merge `origin/main`, merge `main`. A conflict resolution gets reviewed before its commit.
 3. If step 1 changed code or step 2 brought in anything new, run the checks again (step 6). A failure stops the ship: report it and wait.
-4. **Unpushed commits on local `main`:** `git -C <main> log --oneline origin/main..main`. These aren't yours, and the push would take them along. If there are any, list them and ask: **Push them too** / **Stop** — and wait.
-5. **Fast-forward local `main`:** check `git -C <main> branch --show-current` is `main`, then `git -C <main> merge --ff-only <branch>`.
-   - Refused because `main` moved: go back to step 2.
-   - Refused because the main checkout isn't on `main`, or its uncommitted changes are in the way: tell the user exactly what's blocking and wait. Never commit, stash or discard their work.
-6. **Push:** `git -C <main> push origin main`. Rejected because `origin` moved: go back to step 2.
-7. **Clean up:** stop every process you started. Then, as one command, `git -C <main> worktree remove <worktree path> && git -C <main> branch -d <branch>`. This deletes your own working directory, so it must be your last shell command.
-8. Final message: `Shipped: <title>` with the pushed commit, and that `claude rm <session name>` clears this finished session from the list.
+4. **Unpushed commits on local `main`:** `git log --oneline origin/main..main` (from the worktree — the refs are shared). These aren't yours, and the push would take them along. If there are any, list them and ask: **Push them too** / **Stop** — and wait.
+5. **Check the main checkout is on `main`:** the first entry of `git worktree list --porcelain` must show `branch refs/heads/main`. If not, tell the user and wait.
+6. **Stop every process you started**, then step out: `ExitWorktree` with action `keep`. You're now in the main checkout.
+7. **Fast-forward local `main`:** `git merge --ff-only <branch>`.
+   - Refused because `main` moved: `EnterWorktree` (`path`) back in and go to step 2.
+   - Refused because uncommitted changes in the main checkout are in the way: tell the user exactly which files and wait. Never commit, stash or discard their work.
+8. **Push:** `git push origin main`. Rejected because `origin` moved: `EnterWorktree` back in and go to step 2.
+9. **Clean up:** `git worktree remove <worktree path> && git branch -d <branch>`.
+10. Final message: `Shipped: <title>` with the pushed commit, and that `claude rm <session name>` clears this finished session from the list.
 
 ## Drop
 
@@ -110,6 +123,6 @@ When the user says **drop** (or abandon, scrap it):
 
 1. Confirm first with AskUserQuestion: dropping deletes the worktree and its branch, including the spec; it can be recovered from a commit SHA for a while. **Drop it** / **Keep it**.
 2. Commit everything, uncommitted feedback included: `git add -A && git commit -m "WIP: <title> (dropped)"`.
-3. Stop every process you started.
-4. As your last shell command: `git -C <main> worktree remove <worktree path> && git -C <main> branch -D <branch>`.
+3. Stop every process you started, then `ExitWorktree` with action `keep`.
+4. From the main checkout: `git worktree remove <worktree path> && git branch -D <branch>`.
 5. Final message: `Dropped: <title>`, the WIP commit's SHA, and that `git branch <branch> <sha>` in the main checkout brings it all back (until git garbage-collects it).

@@ -94,7 +94,11 @@ so nothing reaches GitHub):
   - The ready message shows the spec diff since that commit.
 - **The builder is a background Opus session at your usual effort** (new).
   - It is launched as `claude --bg -n <repo>-<slug> --model opus
-    "/feature-flow build <spec>"` from inside the worktree.
+    "/feature-flow build <worktree-path> <spec>"` from the main checkout. Its
+    first act is `EnterWorktree` (`path`) into the worktree.
+  - *Changed while building:* the spec first said to launch from inside the
+    worktree. `claude --bg` refuses folders the user hasn't trusted, and trust
+    doesn't carry from a trusted repo to a new worktree folder.
   - No `--effort` flag, so your settings apply (xhigh).
   - The design session leaves the worktree (`ExitWorktree` keep) before it
     ends, so two sessions never share one checkout.
@@ -200,8 +204,9 @@ so nothing reaches GitHub):
 1. In the worktree: `git add <spec>` and `git commit -m "Spec: <title>"`.
    This commit is the sign-off reference. It is a docs-only commit, made at
    your click, so no review question.
-2. `claude --bg -n <repo>-<slug> --model opus "/feature-flow build <spec>"`,
-   run from the worktree.
+2. `claude --bg -n <repo>-<slug> --model opus "/feature-flow build
+   <worktree-path> <spec>"`, run from the main checkout. The builder enters
+   the worktree first.
 3. `ExitWorktree` (keep). Then tell you the session name and
    `claude attach <repo>-<slug>`, and that this session is done.
 4. If the launch fails, print the command for you to run, and stay in the
