@@ -133,7 +133,7 @@ Never infer sign-off from:
 
 **On every answer,** re-read the spec from disk and compare the hash first, since the user may have edited it while reading. `////` lines mean **Not yet**, whatever they clicked. Any other change means the sign-off stands on the new text, but the review read the old one.
 
-**Which text a review vouches for** is `review.md`'s "When a review counts". Apply it whenever the spec changes or a review ends. When a review goes stale, stop it (TaskStop) and say so in one line naming what changed, since an unexplained stop looks like a failure. Start a fresh one at the next sign-off ask, or straight away if the user has already signed off on the new text. One exception: your edits that settle a returned review's findings get the quick check from "Handling the findings", not a fresh review (steps 7 and 8).
+**Which text a review vouches for** is `review.md`'s "When a review counts". Apply it whenever the spec changes or a review ends. When a review goes stale, stop it (TaskStop) and say so in one line naming what changed, since an unexplained stop looks like a failure. Start a fresh one at the next sign-off ask, or straight away if the user has already signed off on the new text. One exception: your edits that settle a returned review's findings get the quick check from "Handling the findings", not a fresh review, unless an answer brought in something the review never saw (`review.md`, "When a review counts", Settling its decisions; steps 7 and 8).
 
 **Hold findings** that arrive before the user answers, and handle them after.
 
@@ -145,12 +145,13 @@ Never infer sign-off from:
 2. **Handle it** per `review.md`'s "Handling the findings".
 3. **No decisions:** apply its fixes and "already decided" notes, then read `build.md` in this skill's folder and follow it from step 1.
 4. **Decisions:** put them in one picker whose **last** question is *"Then:"* with **Build now (Recommended)** and **Hold**. At most three decisions per picker; more go in an earlier picker, and "Then:" is always the last question of the last one.
-   - **Build now:** integrate the answers, do the quick check that the flagged items are resolved, and build (`build.md` from step 1). No second sign-off: the answers plus Build now are the sign-off on the revised text, and changes that settle the review's decisions get the quick check, not a new review.
+   - **Build now:** integrate the answers, do the quick check that the flagged items are resolved, and build (`build.md` from step 1). No second sign-off: the answers plus Build now are the sign-off on the revised text.
+   - **An answer that brings in something new** (free text beyond the offered options, a "chat about this" that reshapes the design, a new requirement): per `review.md`'s "Settling its decisions", the revised text gets a fresh review before anything is built. Say so in one line, start it, and handle it like the first one. Build now then means "build once it's back with nothing to decide"; its decisions come in a new picker, again ending with "Then:".
    - **Hold:** integrate the answers and wait. When the user says build, follow `build.md` from step 1.
 
 ## 8. After "Sign off, build later"
 
-Handle the review as in step 7: wait for it (if it isn't back, say so in one line and end the turn), apply its fixes and notes, and put any decisions to the user in a picker of up to four, with no "Then:" question; then integrate the answers and do the quick check. Then commit the spec as `build.md` step 1 says, and tell the user that saying "build it" in this window starts the build, or `/feature-flow resume <worktree-path>` from a new session in the main checkout. On "build it", follow `build.md` from step 2.
+Handle the review as in step 7: wait for it (if it isn't back, say so in one line and end the turn), apply its fixes and notes, and put any decisions to the user in a picker of up to four, with no "Then:" question; then integrate the answers and do the quick check, or run a fresh review when an answer brought in something new, as in step 7. Then commit the spec as `build.md` step 1 says, and tell the user that saying "build it" in this window starts the build, or `/feature-flow resume <worktree-path>` from a new session in the main checkout. On "build it", follow `build.md` from step 2.
 
 ## No closing offer before the review is handled
 
