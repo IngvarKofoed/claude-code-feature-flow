@@ -141,6 +141,12 @@
 > its own marketplace) whose hooks module pins the window's feature as the
 > plugin's own status line with `$.ui.status`, independent of the
 > `statusLine` setting. It only reads the state file; Cockpit is unchanged.
+>
+> **Revision 2026-11-24 — the main session shows the mockup.** Twice in use the
+> mockup subagent published its page but the user never saw it: the subagent's
+> "open" happens where the user can't see it, and the main session reported it
+> as opened without a link. Now the main session itself opens every published
+> mockup (Artifact `open`) and always prints its full link, one line per mockup.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree

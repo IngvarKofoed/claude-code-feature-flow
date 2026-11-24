@@ -69,8 +69,13 @@ A mockup shows the changed screen **in the app's real look**, never a sketch or 
   - the components, stylesheets and design tokens behind those screens, plus any design-system skill the project's `CLAUDE.md` names (the FOSS design system in the work repos);
   - with the app's real class names, colors, spacing and fonts carried into one self-contained page, and real content (real names, plausible values), not lorem ipsum.
 
-  It may look at the app if it's already running, but never starts, installs or changes anything in the repo, and works in its own scratch folder. It publishes the page as a private Artifact (following the Artifact tool's rules), with a visible "Mockup" label and a title naming the screen, and returns the link and a line on what it shows.
-- **Feedback on it** goes to the same subagent (SendMessage), which republishes to the same link.
+  It may look at the app if it's already running, but never starts, installs or changes anything in the repo, and works in its own scratch folder. It publishes the page as a private Artifact (following the Artifact tool's rules), with a visible "Mockup" label and a title naming the screen, and returns the link (the full URL, never just a title) and a line on what it shows.
+- **Showing it to the user is your job, not the subagent's.** The user can't see anything the subagent does, including an Artifact it "opens". So every time a mockup is published or republished, you, the main session:
+  1. call the Artifact tool's `open` action with its link, so it opens for the user;
+  2. put the **full link** in your message, on its own line, starting with the screen it shows (`Mockup, chip settings: https://claude.ai/...`), with one line on what to look at. With several, one line per mockup.
+
+  Never write that a mockup was opened or is ready without the link in that same message. If the subagent returned no link, say so and ask it for the link (SendMessage); don't describe a mockup you can't link to.
+- **Feedback on it** goes to the same subagent (SendMessage), which republishes to the same link; show it again as above, saying what changed.
 - **Into the spec:** the chosen design's mockup link goes in Design ("Mockup: <link>, the look to match"); a rejected approach's link goes beside it in Alternatives considered. A mockup that's still running when the spec reaches sign-off is waited for, since the user signs what they can see: say so in one line.
 
 ## 4. Draft, in the worktree
