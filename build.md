@@ -29,11 +29,12 @@ Then, every time a step starts or finishes, print just that one line with its ne
 `$(git rev-parse --git-dir)/feature-flow-progress.log`
 Append one line per milestone — `printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "<who>: <what>" >> <log>`, a UTC timestamp other agents can read — where `<who>` is `session`, `builder`, `builder/<chunk>` or `checker`. You log each checklist change; the builder and every helper it starts log their own milestones (a chunk part done, a spec fix, a question they're stopping on, a process started or stopped). Put the log path and this rule in every brief.
 
-**The state file.** One JSON file per feature, next to the log (`feature-flow-state.json`), so the user — or any agent — can see every feature at once with `/feature-flow status`. You write it with this skill's script, from inside the worktree:
-`python3 <this skill's folder>/state.py set --step "<step>" [--phase build|feedback|ship|drop] [--waiting "<what the user needs to do>"]`
-- **Every checklist line you print** is also a `set`, with the line's step (`5 Review and commit`, `Feedback 2: 2 Fixing`, `Wrap-up: 1 Validate`, `Ship: 3 Checks`) and the phase when it changes.
+**The state file.** One JSON file per feature, next to the log (`feature-flow-state.json`), so the user — or any agent — can see every feature at once with `/feature-flow status`, and each window's status line can show its own feature's step. You write it with this skill's script:
+`python3 <this skill's folder>/state.py set --phase <phase> --n <step number> --of <steps in that checklist> --step "<step name>" [--round <n>] [--waiting "<what the user needs to do>"]`
+It stamps the time and this window's session id, and shows the step as, for example, `Build 5/7 Review and commit`.
+- **Every checklist line you print** is also a `set`, with its number, its checklist's length and its name: the build (`--phase build --n 5 --of 7 --step "Review and commit"`), a feedback round (`--phase feedback --round 2 --n 2 --of 4 --step "Fixing"`), the wrap-up after Done (`--phase wrapup --n 1 --of 4 --step "Validate"`), ship (`--phase ship --n 3 --of 7 --step "Checks"`) and drop (`--phase drop`, its five steps).
 - **Every turn you end for the user** is a `set --waiting` saying what they need to do, in a few words ("Try it: ship, feedback or drop", "Answer the builder's question", "Decide 2 your-call items"). The next `set` without `--waiting` means you're working again.
-- At ship and drop, the last `set` comes before `ExitWorktree`; the file goes with the worktree.
+- **After `ExitWorktree`** (ship and drop), keep going: add `--worktree <worktree path>` so the script finds the file from the main checkout. The status line follows this window there by its session id. The file goes with the worktree when it's removed.
 - Subagents don't write it; the log is theirs.
 
 **`status?`** Subagents run in the background, so the user can type while they work. When they ask for status ("status?", "where are you?", "how far?"), answer without interrupting anything: the checklist as it stands, the last ten or so lines of the log, and which subagents are still running. Any other message during the build is an extra instruction: pass it to the builder (SendMessage) and say so in a line.

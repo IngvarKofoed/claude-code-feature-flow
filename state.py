@@ -5,9 +5,13 @@ Each feature session keeps `feature-flow-state.json` in its worktree's git folde
 (`<repo>/.git/worktrees/<name>/`, next to `feature-flow-progress.log`), so it is never
 tracked and disappears with the worktree at ship or drop.
 
-  state.py set --step STEP [--phase PHASE] [--title TITLE] [--spec PATH] [--waiting TEXT]
-      Run inside the feature's worktree. Writes the state with a UTC timestamp.
-      --waiting says what the user needs to do; a `set` without it means "working".
+  state.py set --step NAME [--n N --of TOTAL] [--phase PHASE] [--round R] [--title TITLE]
+               [--spec PATH] [--waiting TEXT] [--worktree PATH]
+      Run inside the feature's worktree, or name it with --worktree (after ExitWorktree).
+      Writes the state with a UTC timestamp and this window's session id
+      (CLAUDE_CODE_SESSION_ID), and composes the display step, e.g. "Build 5/7 Review and
+      commit" or "Feedback 2: 2/4 Fixing". --waiting says what the user needs to do; a
+      `set` without it means "working".
 
   state.py status [--json] [--roots DIR:DIR]
       Lists every feature in flight under the roots (default: ~/work and ~/private,
@@ -20,13 +24,14 @@ import datetime
 import glob
 import json
 import os
-import subprocess
 import sys
 import tempfile
 
 STATE_NAME = "feature-flow-state.json"
 LOG_NAME = "feature-flow-progress.log"
-PHASES = ("design", "build", "feedback", "ship", "drop")
+PHASES = ("design", "build", "feedback", "wrapup", "ship", "drop")
+PHASE_LABEL = {"design": "Design", "build": "Build", "feedback": "Feedback",
+               "wrapup": "Wrap-up", "ship": "Ship", "drop": "Drop"}
 QUIET_AFTER_S = 60 * 60  # working, but no update for an hour: the session may be gone
 
 
@@ -44,20 +49,56 @@ def parse_iso(text):
     )
 
 
-def git(*args):
-    return subprocess.check_output(("git",) + args, text=True).strip()
+def find_checkout(start):
+    """Nearest directory at or above `start` holding a `.git` entry, or None."""
+    d = os.path.abspath(start)
+    while True:
+        if os.path.exists(os.path.join(d, ".git")):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            return None
+        d = parent
+
+
+def linked_git_dir(worktree):
+    """The git dir of a linked worktree, read from its `.git` file (no git subprocess,
+    so it works from anywhere, including the main checkout after ExitWorktree)."""
+    dot_git = os.path.join(worktree, ".git")
+    if not os.path.isfile(dot_git):
+        return None  # a .git directory: the main checkout, not a feature worktree
+    with open(dot_git) as f:
+        for line in f:
+            if line.startswith("gitdir:"):
+                p = line[len("gitdir:"):].strip()
+                return os.path.normpath(p if os.path.isabs(p) else os.path.join(worktree, p))
+    return None
+
+
+def read_branch(git_dir):
+    try:
+        with open(os.path.join(git_dir, "HEAD")) as f:
+            head = f.read().strip()
+        return head[len("ref: refs/heads/"):] if head.startswith("ref: refs/heads/") else None
+    except OSError:
+        return None
+
+
+def display_step(phase, name, n, total, rnd):
+    label = PHASE_LABEL.get(phase, phase.capitalize())
+    if rnd:
+        label = "%s %d:" % (label, rnd)
+    count = ("%d/%d " % (n, total)) if (n and total) else ""
+    return "%s %s%s" % (label, count, name)
 
 
 def cmd_set(a):
-    try:
-        git_dir = git("rev-parse", "--absolute-git-dir")
-        common = git("rev-parse", "--path-format=absolute", "--git-common-dir")
-        worktree = git("rev-parse", "--show-toplevel")
-        branch = git("branch", "--show-current")
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        sys.exit("state.py set: not inside a git worktree")
-    if os.path.realpath(git_dir) == os.path.realpath(common):
-        sys.exit("state.py set: this is the main checkout; run it inside the feature's worktree")
+    worktree = os.path.abspath(a.worktree) if a.worktree else find_checkout(os.getcwd())
+    git_dir = linked_git_dir(worktree) if worktree else None
+    if not git_dir:
+        sys.exit("state.py set: not in a feature worktree; run it inside one, or pass --worktree")
+    common = os.path.dirname(os.path.dirname(git_dir))  # <repo>/.git/worktrees/<name> -> <repo>/.git
+    branch = read_branch(git_dir)
 
     path = os.path.join(git_dir, STATE_NAME)
     state = {}
@@ -80,10 +121,15 @@ def cmd_set(a):
     repo = os.path.dirname(common) if os.path.basename(common) == ".git" else common
     state.update(
         {
-            "version": 1,
+            "version": 2,
             "title": title,
             "phase": phase,
-            "step": a.step,
+            "step": display_step(phase, a.step, a.n, a.of, a.round),
+            "step_name": a.step,
+            "step_number": a.n,
+            "step_total": a.of,
+            "round": a.round,
+            "session_id": os.environ.get("CLAUDE_CODE_SESSION_ID") or state.get("session_id"),
             "waiting_for_user": bool(a.waiting),
             "waiting_for": a.waiting or None,
             "updated_at": ts,
@@ -196,7 +242,11 @@ def main():
     p = argparse.ArgumentParser(description="feature-flow state and overview")
     sub = p.add_subparsers(dest="cmd")
     s = sub.add_parser("set")
-    s.add_argument("--step", required=True)
+    s.add_argument("--step", required=True, help="the step's name, e.g. 'Review and commit'")
+    s.add_argument("--n", type=int, help="the step's number in its phase's checklist")
+    s.add_argument("--of", type=int, help="how many steps that checklist has")
+    s.add_argument("--round", type=int, help="feedback round number")
+    s.add_argument("--worktree", help="the feature's worktree, when not running inside it")
     s.add_argument("--phase", choices=PHASES)
     s.add_argument("--title")
     s.add_argument("--spec")

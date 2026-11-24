@@ -91,6 +91,13 @@
 > `/feature-flow status` (or `state.py status [--json]`) lists every feature
 > under `~/work` and `~/private`, those waiting for the user first. Progress
 > log lines now carry UTC timestamps too.
+>
+> **Revision 2026-11-24 — numbered steps and the window's session.** Each
+> `set` now carries the step's number and its checklist's length, so the step
+> reads `Build 5/7 Review and commit`, and records the window's session id
+> (`CLAUDE_CODE_SESSION_ID`). After `ExitWorktree`, ship and drop keep the
+> file current with `--worktree`, and a status line can still find the
+> window's feature by session id from the main checkout.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree
