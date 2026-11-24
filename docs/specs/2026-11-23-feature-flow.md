@@ -96,6 +96,10 @@ so nothing reaches GitHub):
   - It is launched as `claude --bg -n <repo>-<slug> --model opus
     "/feature-flow build <worktree-path> <spec>"` from the main checkout. Its
     first act is `EnterWorktree` (`path`) into the worktree.
+  - *Changed while building:* builders are named `ff-<repo>-<slug>`, and
+    design mode removes finished ones (worktree gone) when you start the next
+    feature, because a session can't remove itself from `claude agents`.
+    The prefix keeps tidy-up away from every other session.
   - *Changed while building:* the spec first said to launch from inside the
     worktree. `claude --bg` refuses folders the user hasn't trusted, and trust
     doesn't carry from a trusted repo to a new worktree folder.

@@ -18,8 +18,8 @@ Both modes rely on these, so neither may change them alone:
 - **One worktree per feature**, created by design mode with `EnterWorktree` and named after the spec's slug. Its branch is whatever `EnterWorktree` created (read it with `git branch --show-current`; don't assume a naming scheme).
 - **The spec commit is the sign-off.** Design mode commits the spec file alone on the worktree branch, with the message `Spec: <title>`, before launching the builder. The builder finds it as the commit that added the spec (`git log --diff-filter=A --format=%H -1 -- <spec-path>`), reads Outcome from it, and reports every spec change since it.
 - **The builder session** is started from the **main checkout** as
-  `claude --bg -n <repo>-<slug> --model opus "/feature-flow build <worktree-path> <spec-path>"`
-  where `<repo>` is the main checkout's folder name, `<worktree-path>` is the worktree's path relative to the main checkout (e.g. `.claude/worktrees/<slug>`), and `<spec-path>` is repo-relative. It starts in the main checkout because `claude --bg` refuses folders the user hasn't trusted, and a new worktree never has been; its first act is to move into the worktree with `EnterWorktree` (`path`). No `--effort`: the user's own settings apply. The same command, run again from the main checkout, restarts a builder that died.
+  `claude --bg -n ff-<repo>-<slug> --model opus "/feature-flow build <worktree-path> <spec-path>"`
+  where the `ff-` prefix marks it as a feature-flow builder (so tidy-up can never touch another session, and `claude attach <repo>-<slug>` still finds it, since part of a name is enough), `<repo>` is the main checkout's folder name, `<worktree-path>` is the worktree's path relative to the main checkout (e.g. `.claude/worktrees/<slug>`), and `<spec-path>` is repo-relative. It starts in the main checkout because `claude --bg` refuses folders the user hasn't trusted, and a new worktree never has been; its first act is to move into the worktree with `EnterWorktree` (`path`). No `--effort`: the user's own settings apply. The same command, run again from the main checkout, restarts a builder that died.
 - **One session per checkout.** Design mode leaves the worktree before it ends, and the builder does nothing until it has moved into it, so the builder is the only session working there.
 
 ## Design mode
@@ -32,6 +32,13 @@ Check, quietly:
 - a branch named `main` exists and is the default branch, and a remote named `origin` exists.
 
 If any check fails, say in one line that the build half isn't available here and why, then run plain `/spec` on the topic and stop treating this as a feature flow.
+
+**Tidy up finished builders.** A shipped or dropped builder stays in `claude agents` until removed, because a session can't remove itself. So, before invoking `/spec`, list background sessions with `claude agents --json --all` and pick those that meet **all** of these:
+
+- the name starts with `ff-<repo>-` and the `cwd` is this main checkout;
+- the worktree its name points to (`.claude/worktrees/<slug>` for `ff-<repo>-<slug>`) is not in `git worktree list` — it shipped or was dropped.
+
+For each, `claude stop <id>` if it is still running, then `claude rm <id>`. Say it in one line ("Removed 2 finished builders: ff-flux-x, ff-flux-y") or say nothing when there were none. Never touch a session whose worktree still exists, whatever its state — it may be waiting for the user.
 
 ### Run `/spec`, with these additions
 
@@ -66,11 +73,11 @@ This picker offers sign-off, so under `/spec`'s rules it **is** a sign-off ask: 
 
 1. In the worktree: `git add <spec-path>` and `git commit -m "Spec: <title>"`. Only the spec file — check `git status` first and leave anything else alone. This is a docs-only commit the user asked for by clicking; it takes no review question.
 2. Run the builder command from the contract **in the main checkout**: `cd <main checkout> && claude --bg …` in one Bash call (the main checkout is the first entry of `git worktree list --porcelain`).
-3. Confirm it started: `claude agents --json` lists `<repo>-<slug>`, or the command printed a session id. If it failed, show the error and the exact command with its `cd`, and stay in the worktree until the user says it's running; then continue with step 4. A "workspace not trusted" error means the main checkout itself was never trusted: the user runs `claude` there once.
+3. Confirm it started: `claude agents --json` lists `ff-<repo>-<slug>`, or the command printed a session id. If it failed, show the error and the exact command with its `cd`, and stay in the worktree until the user says it's running; then continue with step 4. A "workspace not trusted" error means the main checkout itself was never trusted: the user runs `claude` there once.
 4. `ExitWorktree` with action `keep`. The worktree must stay: the builder is in it.
-5. Tell the user, in three lines: it's building in the background as `<repo>-<slug>`; `claude attach <repo>-<slug>` shows it, and it will say when it's ready to test or needs them; this session is done and can be closed.
+5. Tell the user, in three lines: it's building in the background as `ff-<repo>-<slug>`; `claude attach <repo>-<slug>` shows it, and it will say when it's ready to test or needs them; this session is done and can be closed.
 
 ## Notes
 
 - **Picker wording.** Every question you put to the user says what the choice changes and, when it's not obvious, shows a short concrete example. Option labels stand on their own.
-- **Restarting a dead builder:** `cd <main checkout> && claude --bg -n <repo>-<slug> --model opus "/feature-flow build <worktree-path> <spec-path>"`. Build mode works out where it was from git.
+- **Restarting a dead builder:** `cd <main checkout> && claude --bg -n ff-<repo>-<slug> --model opus "/feature-flow build <worktree-path> <spec-path>"`. Build mode works out where it was from git.

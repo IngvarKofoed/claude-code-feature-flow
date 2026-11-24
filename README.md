@@ -42,17 +42,19 @@ feature-flow() { claude "/feature-flow $*"; }
 | You | What happens |
 |---|---|
 | `feature-flow add rate limiting to the login endpoint` | `/spec` starts on that topic in the current repo |
-| Pick **Sign off and implement** | Review runs; the builder starts as `<repo>-<slug>` |
+| Pick **Sign off and implement** | Review runs; the builder starts as `ff-<repo>-<slug>` |
 | `claude agents` | See which builders are working, waiting for you, or ready |
 | `claude attach <repo>-<slug>` | Answer its question, read its ready message, give feedback |
 | `ship` | Land on `main`, push, clean up |
 | `drop` | Abandon it (asks first; recoverable from the printed SHA) |
 
+**Finished builders tidy themselves away.** A shipped or dropped builder stays in `claude agents` (a session can't remove itself), so the next `feature-flow` you start in that repo removes it. It only touches sessions named `ff-<repo>-…` whose worktree is already gone; a builder that's still working or waiting for you is never touched.
+
 **A builder died?** Restart it from the main checkout; it moves into its worktree and works out from git where it was:
 
 ```bash
 cd <repo>
-claude --bg -n <repo>-<slug> --model opus "/feature-flow build .claude/worktrees/<slug> docs/specs/<date>-<slug>.md"
+claude --bg -n ff-<repo>-<slug> --model opus "/feature-flow build .claude/worktrees/<slug> docs/specs/<date>-<slug>.md"
 ```
 
 Builders start in the main checkout rather than the worktree because `claude --bg` only runs in folders you've trusted, and a fresh worktree never has been. The builder moves itself into the worktree first thing.

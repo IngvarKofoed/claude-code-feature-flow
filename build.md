@@ -115,7 +115,7 @@ Every user message that isn't ship or drop is feedback.
    - Refused because uncommitted changes in the main checkout are in the way: tell the user exactly which files and wait. Never commit, stash or discard their work.
 8. **Push:** `git push origin main`. Rejected because `origin` moved: `EnterWorktree` back in and go to step 2.
 9. **Clean up:** `git worktree remove <worktree path> && git branch -d <branch>`.
-10. Final message: `Shipped: <title>` with the pushed commit, and that `claude rm <session name>` clears this finished session from the list.
+10. Final message: `Shipped: <title>` with the pushed commit, and that this session is finished: the next `feature-flow` in this repo removes it from the session list (or `claude rm <session name>` now).
 
 ## Drop
 
@@ -125,4 +125,4 @@ When the user says **drop** (or abandon, scrap it):
 2. Commit everything, uncommitted feedback included: `git add -A && git commit -m "WIP: <title> (dropped)"`.
 3. Stop every process you started, then `ExitWorktree` with action `keep`.
 4. From the main checkout: `git worktree remove <worktree path> && git branch -D <branch>`.
-5. Final message: `Dropped: <title>`, the WIP commit's SHA, and that `git branch <branch> <sha>` in the main checkout brings it all back (until git garbage-collects it).
+5. Final message: `Dropped: <title>`, the WIP commit's SHA, and that `git branch <branch> <sha>` in the main checkout brings it all back (until git garbage-collects it). Like after ship, the next `feature-flow` in this repo removes this finished session from the list.
