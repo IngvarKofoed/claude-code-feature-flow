@@ -8,7 +8,7 @@ A [Claude Code](https://docs.claude.com/en/docs/claude-code) skill that takes on
 4. **Test.** Try it, and type feedback in the same window.
 5. **Ship.** Type `ship`: it lands on `main` by fast-forward, pushes, and removes the worktree and branch. Or type `drop` to abandon it.
 
-No extra sessions are started: everything you see and answer is in the window you began in.
+No extra sessions are started: everything you see and answer is in the window you began in. While it builds, it prints a checklist line at every step (`✓ 2 Copy set up …`, `▶ 3 Building …`), and the builder and its helpers keep a progress log — type `status?` to see where things stand without interrupting.
 
 The design and its reasoning are in [`docs/specs/2026-11-23-feature-flow.md`](docs/specs/2026-11-23-feature-flow.md).
 
@@ -37,6 +37,7 @@ git clone git@github.com:IngvarKofoed/claude-code-feature-flow.git ~/.claude/ski
 | `/feature-flow add rate limiting to the login endpoint` | `/spec` starts on that topic in the current repo |
 | Pick **Sign off and implement** | Review runs; then the same session builds |
 | Your answers to its questions | It carries on |
+| `status?`, any time during the build | The step checklist so far, the latest progress-log lines from the builder and its helpers, and what's still running |
 | Feedback, after **Ready to test** | It changes, re-checks, and reports |
 | `ship` | Land on `main`, push, clean up |
 | `drop` | Abandon it (asks first; recoverable from the printed SHA) |

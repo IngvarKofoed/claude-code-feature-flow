@@ -60,5 +60,6 @@ Phases 1–3 only read, so they run in the main checkout. The worktree branches 
 ## Notes
 
 - **Picker wording.** Every question you put to the user says what the choice changes and, when it's not obvious, shows a short concrete example. Option labels stand on their own.
+- **Overview.** During the build the session prints a checklist line at every step and keeps a progress log the builder and its helpers write to; the user can type `status?` at any time (see `build.md`, "Progress you can see").
 - **Several features at once** means several windows, one session each. Each session works only in its own worktree.
 - **If this window dies,** `claude --resume` brings the session back; failing that, `/feature-flow resume <worktree-path>` in a new session picks the feature up from git.

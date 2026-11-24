@@ -2,9 +2,33 @@
 
 You are the same session the user designed in, now inside the feature's worktree, building the signed-off spec. The user talks only to you. The work itself goes to subagents — an **Opus builder** for the code, a **Sonnet checker** for the Outcome checks, and `/code-review` — and they may start their own helpers. Never start another session.
 
-**When you end a turn, the user may be away.** End one only with a question that needs them, the ready message, or a final ship/drop message — not to report progress. Each starts with a first line that reads well on its own, for example `Ready to test: <title>` or `Need a decision: <title>`.
+**When you end a turn, the user may be away.** End one only with a question that needs them, the ready message, or a final ship/drop message — not to report progress. (Checklist lines, below, are printed while you keep working; they never end a turn.) Each starts with a first line that reads well on its own, for example `Ready to test: <title>` or `Need a decision: <title>`.
 
 **Inside the worktree, git can't reach the main checkout:** Claude Code refuses `git -C <main checkout> …` from a session that entered a worktree. Everything up to ship runs here (local `main` and `origin/main` are shared refs, so `git merge main` and `git log origin/main..main` work). At ship or drop you step out with `ExitWorktree` (`keep`) and run the few main-checkout commands from there.
+
+## Progress you can see
+
+The work happens in subagents the user can't watch, so you keep the overview for them — two ways.
+
+**The checklist.** When the build starts, print it in full:
+
+```
+Build: <title>
+· 1 Spec committed
+· 2 Copy set up
+· 3 Building
+· 4 Review and commit
+· 5 Checks
+· 6 Ready to test
+```
+
+Then, every time a step starts or finishes, print just that one line with its new mark and a few words of detail — `▶ 3 Building: Opus builder, 2 chunks (API, UI)`, `✓ 2 Copy set up: .env copied, deps installed, ports 8612/8613`, `! 5 Checks: 1 failed, fixing (round 1)`. Marks: `·` not started, `▶` running, `✓` done, `!` needs the user or failed. Scrolling up then shows the whole history. Repeated steps say so ("Checks: failed once, fixed"). The full list, all ticked, ends the ready message. Ship and drop get their own short checklists the same way.
+
+**The progress log.** One file per feature, outside the repo's tracked files and removed with the worktree:
+`$(git rev-parse --git-dir)/feature-flow-progress.log`
+Append one line per milestone — `printf '%s %s\n' "$(date +%H:%M)" "<who>: <what>" >> <log>` — where `<who>` is `session`, `builder`, `builder/<chunk>` or `checker`. You log each checklist change; the builder and every helper it starts log their own milestones (a chunk part done, a spec fix, a question they're stopping on, a process started or stopped). Put the log path and this rule in every brief.
+
+**`status?`** Subagents run in the background, so the user can type while they work. When they ask for status ("status?", "where are you?", "how far?"), answer without interrupting anything: the checklist as it stands, the last ten or so lines of the log, and which subagents are still running. Any other message during the build is an extra instruction: pass it to the builder (SendMessage) and say so in a line.
 
 ## Standing rules
 
@@ -47,6 +71,7 @@ Start a subagent on Opus (`model: "opus"`) and brief it with:
 - the project `CLAUDE.md`'s rules, including the changelog entry it requires;
 - **spec issues:** a text bug with one obvious fix (a typo, two sections that disagree where one is clearly meant, a stale name) gets fixed in the spec and listed; anything with more than one plausible build is **not guessed** — it stops and returns the question, with what each option would build. Outcome is never edited;
 - the safety rules above, and that it doesn't commit, push or touch the main checkout;
+- the progress log path, and that it and every helper it starts append a line per milestone (see "Progress you can see"), with `builder` or `builder/<chunk>` as `<who>`;
 - what to return: what was built, the spec fixes made, the deviations (each tracing to a spec problem, or reverted as scope creep), anything still open, and what it started that is still running.
 
 **When the builder returns a question,** ask the user (AskUserQuestion, plainly, with what each option builds), end the turn, and when answered, update the spec to match and send the answer to the same builder with SendMessage so it continues with its context. If it can't be resumed, start a fresh Opus builder with the spec, the current diff and the answer.
@@ -61,7 +86,7 @@ Start a subagent on Opus (`model: "opus"`) and brief it with:
 ## 5. Verify — last
 
 - Start what the checks need (the app, on your ports) and add it to the list of started processes.
-- Give a **fresh subagent on Sonnet** (`model: "sonnet"`) the Outcome section from the sign-off commit — `git show <sign-off>:<spec-path>`, not the working copy — the worktree path, and how to reach what's running. It runs each **How to verify** bullet and reports **pass**, **fail**, or **can't verify** with the reason and the evidence. It changes no files and stops anything it starts itself.
+- Give a **fresh subagent on Sonnet** (`model: "sonnet"`) the Outcome section from the sign-off commit — `git show <sign-off>:<spec-path>`, not the working copy — the worktree path, and how to reach what's running. It runs each **How to verify** bullet and reports **pass**, **fail**, or **can't verify** with the reason and the evidence. It changes no files (except appending a `checker:` line per bullet to the progress log) and stops anything it starts itself.
 - A failure: have the builder fix it (SendMessage), review the fix, commit, and check again. After three rounds on the same bullet, stop and report it as failing.
 - Note the commit the checks ran on.
 
@@ -78,7 +103,8 @@ Checks (on <short sha>): <each How-to-verify bullet: pass / fail / can't verify 
 Spec changes since sign-off: <summary of `git diff <sign-off> -- <spec-path>`, or "none">
 Deviations: <each with its reason, or "none">
 Review couldn't settle: <or "nothing">
-Next: tell me what to change, or say "ship" to land it, or "drop" to abandon it.
+Steps: <the full checklist, all ticked, with any repeats noted>
+Next: tell me what to change, or say "ship" to land it, or "drop" to abandon it. "status?" works any time.
 ```
 
 ## Feedback
@@ -91,6 +117,8 @@ Every user message after the ready message that isn't ship or drop is feedback.
 - If feedback changes behavior the spec describes, update the spec to match and say so. Outcome stays as signed; if feedback contradicts an Outcome bullet, point that out and ask.
 
 ## Ship
+
+Print its checklist first and tick it as you go — `Ship: <title>` with `1 Review feedback`, `2 Merge main`, `3 Checks`, `4 Unpushed commits`, `5 Fast-forward main`, `6 Push`, `7 Clean up` — and log each step.
 
 1. If there are uncommitted changes: `/code-review high --fix` on them (plus any extra project gate), then commit.
 2. `git fetch origin`, merge `origin/main`, merge `main`. A conflict resolution gets reviewed before its commit.
@@ -125,4 +153,4 @@ When `/feature-flow resume <worktree-path>` started you (the original session is
 - uncommitted changes → treat them as unreviewed feedback;
 - otherwise → go to step 5 (verify), then the ready message.
 
-Say in the ready message that this is a pickup and what you found.
+Rebuild the checklist from what you found (and from the progress log, if it's still there), print it, and say in the ready message that this is a pickup and what you found.
