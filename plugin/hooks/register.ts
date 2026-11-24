@@ -25,6 +25,7 @@ type FeatureState = {
   updated_at?: string
   worktree?: string | null
   title?: string
+  branch?: string | null
   session_id?: string | null
   progress_log?: string | null
 }
@@ -75,7 +76,9 @@ async function findFeature($: Api, dir: string, sid: string) {
   }
   if (sid && !/[\\/]/.test(sid)) {
     const pending = await readJson($, join(g.common, PENDING, `${sid}.json`))
-    if (pending) return { st: pending, name: pending.title || basename(g.root), gitDir: null }
+    // No worktree yet: the session works on the main checkout's branch, so name that
+    // (the design's title can be long and isn't a branch; it's in /feature-flow status).
+    if (pending) return { st: pending, name: pending.branch || basename(g.root), gitDir: null }
     try {
       for (const entry of await $.fs.list(join(g.common, 'worktrees'))) {
         const wtGit = join(g.common, 'worktrees', entry.name)

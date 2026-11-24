@@ -1,5 +1,5 @@
 {
   "name": "feature-flow",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shows this window's /feature-flow step on its own status line: worktree, step (x/10), what it's doing, and time spent. Pairs with the feature-flow skill, which writes the state it reads."
 }
