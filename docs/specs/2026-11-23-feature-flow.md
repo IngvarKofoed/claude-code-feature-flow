@@ -83,6 +83,14 @@
 > Drop" left the user unsure what to pick when an answer changed the build.
 > Now they come first, alone; all "Keep as built" goes straight on to the
 > usual question, and any other answer starts a feedback round instead.
+>
+> **Revision 2026-11-24 — an overview across features.** Each session keeps
+> a JSON state file next to its progress log (step, phase, waiting for the
+> user and for what, UTC timestamps), written with `state.py set` at every
+> checklist change and every turn that ends for the user, from the draft on.
+> `/feature-flow status` (or `state.py status [--json]`) lists every feature
+> under `~/work` and `~/private`, those waiting for the user first. Progress
+> log lines now carry UTC timestamps too.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree

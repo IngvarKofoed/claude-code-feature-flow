@@ -55,7 +55,8 @@ A real option differs on a load-bearing decision (server- or client-authoritativ
 1. **Read `format.md`.** It sets the spec's path and slug, its length, the template, the worked example and how to call the Implementation strategy. Follow it on this pass and every later one.
 2. **Note the main checkout's local files** while you're still in it: `git ls-files --others --ignored --exclude-standard --directory`. Keep the list for `build.md` step 2; from inside the worktree, git can't reach the main checkout.
 3. **`EnterWorktree`** with `name` set to the slug. Once per feature, never twice. The worktree branches from `origin/main` (unless `worktree.baseRef` is `head`), so it may lack unpushed local `main` commits; the build merges local `main` in later.
-4. **Write the spec** at the path `format.md` gives, inside the worktree. Every draft carries Outcome and the Implementation strategy from the start: the user signs off on both, the build is checked against Outcome, and the builder runs on the model the strategy names.
+4. **Start the state file**, now that there's a worktree: `python3 <this skill's folder>/state.py set --title "<the spec's title>" --phase design --step "Drafting" --spec <spec path>` (see `build.md`, "Progress you can see"). Keep it current through the design: `--step "Draft: markup and questions" --waiting "Answer the open questions or mark up the draft"` when you hand the draft over, `--step "Revising"` while you integrate, `--step "Sign-off" --waiting "Sign off on the spec"` with the sign-off picker, `--step "Fresh-eyes review"` while it runs after sign-off, and `--waiting "Decide the review's findings"` with its decisions.
+5. **Write the spec** at the path `format.md` gives, inside the worktree. Every draft carries Outcome and the Implementation strategy from the start: the user signs off on both, the build is checked against Outcome, and the builder runs on the model the strategy names.
 
 ## 5. Recap and markup
 

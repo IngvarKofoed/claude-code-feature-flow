@@ -41,6 +41,9 @@ git clone git@github.com:IngvarKofoed/claude-code-feature-flow.git ~/.claude/ski
 | **Feedback** (type it in Other), after **Ready to test** | It updates the spec if needed, has a subagent make the change (uncommitted), re-checks, and reports **Ready to test — round n** |
 | **Done — review and commit**, after a round | Reviews and commits all rounds, re-runs every check, and reports a full **Ready to test** |
 | **Ship** | Land on `main`, push, clean up |
+| `/feature-flow status`, in any window | One table of every feature in flight: which need you (first, with how long they've waited), which are working and on which step, and which have gone quiet |
 | **Drop** | Abandon it (asks first; recoverable from the printed SHA) |
+
+**For other agents and scripts.** Each feature in flight has a JSON state file at `<repo>/.git/worktrees/<name>/feature-flow-state.json`, next to its progress log. It holds the title, phase (`design`, `build`, `feedback`, `ship`, `drop`), step, whether it's waiting for the user and for what, the repo, worktree, branch and spec paths, and `started_at` / `updated_at` / `waiting_since` as UTC timestamps (`2026-11-24T13:02:11Z`). `python3 ~/.claude/skills/feature-flow/state.py status --json` returns them all, plus each file's path and age. It looks in `~/work/*` and `~/private/*`; set `FEATURE_FLOW_ROOTS` (colon-separated) to look elsewhere. Progress-log lines start with the same kind of timestamp.
 
 **Window closed or crashed?** `claude --resume` brings the session back. If that's not possible, start a new session in the main checkout and run `/feature-flow resume .claude/worktrees/<slug>`; it works out from git where the feature was.

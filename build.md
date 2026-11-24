@@ -27,7 +27,14 @@ Then, every time a step starts or finishes, print just that one line with its ne
 
 **The progress log.** One file per feature, outside the repo's tracked files and removed with the worktree:
 `$(git rev-parse --git-dir)/feature-flow-progress.log`
-Append one line per milestone — `printf '%s %s\n' "$(date +%H:%M)" "<who>: <what>" >> <log>` — where `<who>` is `session`, `builder`, `builder/<chunk>` or `checker`. You log each checklist change; the builder and every helper it starts log their own milestones (a chunk part done, a spec fix, a question they're stopping on, a process started or stopped). Put the log path and this rule in every brief.
+Append one line per milestone — `printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "<who>: <what>" >> <log>`, a UTC timestamp other agents can read — where `<who>` is `session`, `builder`, `builder/<chunk>` or `checker`. You log each checklist change; the builder and every helper it starts log their own milestones (a chunk part done, a spec fix, a question they're stopping on, a process started or stopped). Put the log path and this rule in every brief.
+
+**The state file.** One JSON file per feature, next to the log (`feature-flow-state.json`), so the user — or any agent — can see every feature at once with `/feature-flow status`. You write it with this skill's script, from inside the worktree:
+`python3 <this skill's folder>/state.py set --step "<step>" [--phase build|feedback|ship|drop] [--waiting "<what the user needs to do>"]`
+- **Every checklist line you print** is also a `set`, with the line's step (`5 Review and commit`, `Feedback 2: 2 Fixing`, `Wrap-up: 1 Validate`, `Ship: 3 Checks`) and the phase when it changes.
+- **Every turn you end for the user** is a `set --waiting` saying what they need to do, in a few words ("Try it: ship, feedback or drop", "Answer the builder's question", "Decide 2 your-call items"). The next `set` without `--waiting` means you're working again.
+- At ship and drop, the last `set` comes before `ExitWorktree`; the file goes with the worktree.
+- Subagents don't write it; the log is theirs.
 
 **`status?`** Subagents run in the background, so the user can type while they work. When they ask for status ("status?", "where are you?", "how far?"), answer without interrupting anything: the checklist as it stands, the last ten or so lines of the log, and which subagents are still running. Any other message during the build is an extra instruction: pass it to the builder (SendMessage) and say so in a line.
 
