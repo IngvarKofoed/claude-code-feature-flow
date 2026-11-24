@@ -16,6 +16,15 @@
 > holds. Where the text below says "builder session", read "the same session,
 > through its Opus builder subagent". `SKILL.md` and `build.md` are the
 > current truth.
+>
+> **Revision 2026-11-24 — questions first, sign-off last.** In use, "Sign off
+> and implement" sitting in the same picker as the open questions asked for a
+> sign-off before the answers were in the spec. Now open questions get their
+> own picker (the review still starts in the background then, and stays valid
+> when only defaults are accepted); the answers are folded in; `/spec`'s
+> sign-off step shows "Here's what you get" (final Outcome, strategy, what
+> changed); and only then comes the sign-off question. This replaces the
+> "draft picker with open questions plus sign-off" described below.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree

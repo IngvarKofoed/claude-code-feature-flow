@@ -40,26 +40,22 @@ Invoke the `spec` skill with the topic and follow it fully. You are its wrapper:
 
 Phases 1–3 only read, so they run in the main checkout. The worktree branches from `origin/main` (unless `worktree.baseRef` is `head`), so it may lack local unpushed `main` commits; the build merges local `main` first. Never call `EnterWorktree` twice.
 
-**2. The draft handoff becomes a sign-off picker.** Keep `/spec`'s recap and markup instructions, but end with one AskUserQuestion instead of "reply when you're done":
+**2. Questions first, sign-off last.** Sign-off is never offered next to a question that would still change the spec. At the draft handoff, keep `/spec`'s recap and markup instructions, then:
 
-- one question per open question, default first and tagged `(Recommended)` — **at most three**. With more than three, ask the open questions first in a picker of their own (plain `/spec` behavior), integrate the answers, and show this picker after;
-- then: *"Sign off on it as it stands, or mark it up first?"* with **Sign off and implement**, **Sign off, build later**, and **I've marked it up**. No `(Recommended)` tag on these — the user may not have read the draft yet.
+- **If the draft has open questions,** ask them in their own picker — up to four, each with its default first and tagged `(Recommended)`, no sign-off option — exactly as plain `/spec` does. **Start the fresh-eyes review (phase 7, on Fable, spec path only, hash noted) in the background in the same turn**, overriding `/spec`'s "no review at the handoff": if the answers only accept the defaults it stays valid (per `/spec`'s stale rule); any other answer or `////` markup makes it stale, and the sign-off step starts a fresh one. Integrate the answers and any markup per `/spec`, and loop until no open questions remain and the user has no more changes.
+- **Then the sign-off step** — `/spec`'s phase 6, which shows **Here's what you get** (the final Outcome, the strategy headline, and what changed since the user last saw the spec) and then asks. Its options here are, in this order: **Sign off and implement (Recommended)**, **Sign off, build later**, **Not yet — more changes**. It is a sign-off ask, so start a review now unless one is running or done on this exact text.
+- **Without open questions,** go from the recap straight to the sign-off step. The recap and markup instructions come first, so the user can still mark the draft up: `////` lines in the file, or "Not yet", mean another pass.
 
-This picker offers sign-off, so under `/spec`'s rules it **is** a sign-off ask: start the fresh-eyes review (phase 7, on Fable, spec path only, hash noted) in the same turn, just before showing it.
-
-**3. The sign-off question** (`/spec` phase 6) gets three options, in this order: **Sign off and implement (Recommended)**, **Sign off, build later**, **Not yet — more changes**.
-
-**4. After "Sign off and implement":**
+**3. After "Sign off and implement":**
 
 - Re-read the spec and compare the hash, per `/spec`. `////` lines mean "not yet".
-- **Changed answers:** if an open question in the same picker was answered with anything other than its default, fold the answers into the spec and start a fresh review on the new text. Defaults alone keep the running review valid.
 - Wait for the review. If it isn't back, say in one line that it's still running and the build starts when it's back with nothing to decide, then end the turn.
 - **No decisions:** apply its fixes and "already decided" notes (per `/spec`), then **build** — read `build.md` in this skill's folder and follow it.
 - **Decisions:** put them in one picker whose **last** question is *"Then:"* with **Build now (Recommended)** and **Hold**. At most three decisions per picker; more go in an earlier picker, and "Then:" is always the last question of the last one. On **Build now**, integrate the answers, do `/spec`'s quick check that the flagged items are resolved, and build — no second sign-off: the answers plus Build now are the sign-off on the revised text. On **Hold**, integrate the answers and wait; build when the user says so.
 
-**5. After "Sign off, build later":** finish `/spec` normally (the review handled), commit the spec (`build.md` step 1), and tell the user that saying "build it" in this window starts the build, or `/feature-flow resume <worktree-path>` from a new session in the main checkout.
+**4. After "Sign off, build later":** finish `/spec` normally (the review handled), commit the spec (`build.md` step 1), and tell the user that saying "build it" in this window starts the build, or `/feature-flow resume <worktree-path>` from a new session in the main checkout.
 
-**6. No closing offer before the review is handled** — `/spec`'s rule, and it covers the build: never start building a spec whose review hasn't returned.
+**5. No closing offer before the review is handled** — `/spec`'s rule, and it covers the build: never start building a spec whose review hasn't returned.
 
 ## Notes
 
