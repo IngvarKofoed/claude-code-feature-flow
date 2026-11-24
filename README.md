@@ -10,7 +10,7 @@ A [Claude Code](https://docs.claude.com/en/docs/claude-code) skill that takes on
 
 No extra sessions are started: everything you see and answer is in the window you began in. While it builds, it prints a checklist line at every step (`✓ 2 Copy set up …`, `▶ 3 Building …`), and the builder and its helpers keep a progress log — type `status?` to see where things stand without interrupting.
 
-**Status line (optional).** The repo also holds a small plugin, in [`plugin/`](plugin/README.md), that shows each window's feature under the prompt, e.g. `⚠ feature-flow: ⎇ chip-cut · 4/10 Building · builder/API: endpoint done · 42m`. It reads the state file this skill writes and works beside any status line you already have. Install it once:
+**Status line (optional).** The repo also holds a small plugin, in [`plugin/`](plugin/README.md), that shows each window's feature under the prompt, e.g. `⚠ feature-flow: ⎇ chip-cut · 4/10 Building · Builder/API: endpoint done · 42m`. It reads the state file this skill writes and works beside any status line you already have. Install it once:
 
 ```
 /plugin install feature-flow --marketplace IngvarKofoed/claude-code-feature-flow

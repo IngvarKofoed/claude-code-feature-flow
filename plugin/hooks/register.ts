@@ -125,6 +125,7 @@ function spent(iso: string | undefined) {
 }
 
 const clip = (s: string, n: number) => (s.length <= n ? s : s.slice(0, n - 1) + '…')
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 async function refresh($: Api) {
   try {
@@ -133,13 +134,13 @@ async function refresh($: Api) {
     if (!found) return $.ui.status(undefined)
     const { st, name, gitDir } = found
     let doing: string | null = null
-    if (st.waiting_for_user) doing = 'your turn' + (st.waiting_for ? `: ${st.waiting_for}` : '')
+    if (st.waiting_for_user) doing = 'Your turn' + (st.waiting_for ? `: ${st.waiting_for}` : '')
     else {
       const log = st.progress_log || (gitDir ? join(gitDir, LOG) : null)
       doing = (log && (await lastLogLine($, log, st.updated_at))) || st.doing || null
     }
     const parts = [`⎇ ${name}`, st.step as string]
-    if (doing) parts.push(clip(doing, 70))
+    if (doing) parts.push(clip(capital(doing), 70))
     const time = spent(st.started_at)
     if (time) parts.push(time)
     $.ui.status(parts.join(' · '))

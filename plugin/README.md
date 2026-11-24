@@ -3,10 +3,10 @@
 The plugin half of [feature-flow](../README.md). It shows the feature this window is working on as its own status line under the prompt, for example:
 
 ```
-⚠ feature-flow: ⎇ chip-cut · 4/10 Building · builder/API: endpoint and tests done · 42m
+⚠ feature-flow: ⎇ chip-cut · 4/10 Building · Builder/API: endpoint and tests done · 42m
 ```
 
-That is where the session works (the worktree, or the branch before the draft creates one), the step among the feature's ten overall steps, what the step is doing (the progress log's newest line, or "your turn: …" when the session needs you), and the time since the feature started.
+That is where the session works (the worktree, or the branch before the draft creates one), the step among the feature's ten overall steps, what the step is doing (the progress log's newest line, or "Your turn: …" when the session needs you), and the time since the feature started.
 
 Install it once (Claude Code 2.1.275 or later):
 
