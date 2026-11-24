@@ -94,7 +94,7 @@ Start the builder subagent and brief it with:
 
 ## 6. Ready message
 
-Leave the app running for the user to try, then end the turn with the message below and the **Feedback / Ship** picker after it. **Try it** sits near the end, just above Steps, so the user finds it without scrolling up.
+Leave the app running for the user to try, then end the turn with the message below and the **Feedback / Ship / Drop** picker after it. **Try it** sits near the end, just above Steps, so the user finds it without scrolling up.
 
 ```
 Ready to test: <title>
@@ -107,19 +107,20 @@ Deviations: <each with its reason, or "none">
 Review couldn't settle: <or "nothing">
 Try it: <commands, URLs and ports; what's running, and that it's stopped at ship>
 Steps: <the full checklist, all ticked, with any repeats noted>
-"drop" abandons it; "status?" works any time.
+"status?" works any time.
 ```
 
-Then ask with AskUserQuestion, one question — *"Tried it? Change something, or ship?"*:
+Then ask with AskUserQuestion, one question — *"Tried it? Change something, ship, or drop?"*:
 
 - **Feedback** — "Type what to change in Other, or pick this and tell me next."
 - **Ship** — "Lands it on main and pushes."
+- **Drop** — "Abandons it: deletes the worktree and branch (asks first)."
 
-Text typed in Other is the feedback (or "drop", or "status?"). **Feedback** picked with no text: ask "What should change?" in one line and end the turn.
+Text typed in Other is the feedback (or "status?"). **Feedback** picked with no text: ask "What should change?" in one line and end the turn.
 
 ## Feedback
 
-**The loop.** A ready message's work is reviewed and committed. Feedback after it runs in **rounds** that stay uncommitted and unreviewed, so each one is quick; after each, the user tests and picks more **Feedback** or **Done**. **Done** reviews and commits all the rounds at once, re-runs every check, and ends with a full ready message (step 6) — back where the build ended, with Feedback / Ship. So what ships is always reviewed code the user has tried. Rounds are numbered from 1 after each full ready message.
+**The loop.** A ready message's work is reviewed and committed. Feedback after it runs in **rounds** that stay uncommitted and unreviewed, so each one is quick; after each, the user tests and picks more **Feedback** or **Done**. **Done** reviews and commits all the rounds at once, re-runs every check, and ends with a full ready message (step 6) — back where the build ended, with Feedback / Ship / Drop. So what ships is always reviewed code the user has tried. Rounds are numbered from 1 after each full ready message.
 
 Feedback is anything the user sends from a picker's Other box, or after picking Feedback, that isn't ship, drop, done or `status?`. Each one starts a round. You run the round the way you ran the build: subagents do the work. **Never investigate, reproduce or change code yourself in a round — not even a one-line tweak.** Your part is the spec, the briefs, the checklist and the messages. A question about the build ("why does X do Y?") isn't a round: answer it, asking the builder when the answer needs a look at the code. A message that arrives while a round is running joins it: pass it to the fixer and say so in a line.
 
@@ -140,7 +141,7 @@ Feedback <n>: <a few words>
    - Every brief carries the user's words verbatim and this round's spec change. **A reported bug is reproduced first:** the fixer reproduces it, fixes it, and shows it's gone. If it can't reproduce it, it doesn't guess — it returns what it tried, and you ask the user (plainly, saying what was tried) and end the turn.
    - Questions the fixer returns go to the user as in step 3.
 3. **Checks.** A fresh Sonnet checker re-runs the How-to-verify bullets the change touches (read from the sign-off commit, as in step 5), plus one check for the feedback itself, written from the user's words ("the repeating row's font size can be changed"). A failure goes back to the fixer — up to three rounds, as in step 5.
-4. **Ready to test** — end the turn with this message and the **Feedback / Done** picker after it:
+4. **Ready to test** — end the turn with this message and the **Feedback / Done / Drop** picker after it:
 
 ```
 Ready to test: <title> — round <n>
@@ -150,13 +151,14 @@ Checks: <each bullet re-run, and the feedback check: pass / fail / can't verify 
 Spec changes this round: <one line, or "none">
 Try it: <what's running and where; anything new about how to reach it>
 Steps: <this round's checklist, all ticked>
-Not reviewed or committed yet. "drop" abandons it; "status?" works any time.
+Not reviewed or committed yet. "status?" works any time.
 ```
 
-Then ask with AskUserQuestion, one question — *"Tried it? More to change, or done?"*:
+Then ask with AskUserQuestion, one question — *"Tried it? More to change, done, or drop?"*:
 
 - **Feedback** — "Type what to change in Other, or pick this and tell me next."
 - **Done — review and commit** — "Reviews and commits all the feedback so far and re-runs every check; then you try it once more before shipping."
+- **Drop** — "Abandons it: deletes the worktree and branch (asks first)."
 
 **Ship** typed during the rounds skips that last try: ship's step 1 reviews and commits the rounds, and its checks run as usual.
 
@@ -166,7 +168,7 @@ When the user picks **Done** (or says "done", "that's it"), print `Wrap-up: <tit
 
 1. **Review and commit** — step 4 on the uncommitted diff: `/code-review high --fix` plus any project gate, a commit in the repo's style naming the feature and the feedback, ending with the `Reviewed: /code-review high --fix` line, then fetch and merge `origin/main` and `main`.
 2. **Checks** — step 5 in full: every How-to-verify bullet, plus each round's feedback check.
-3. **Ready to test** — step 6's full message, with **Feedback folded in** filled, and its Feedback / Ship picker. Feedback from there starts at round 1 again.
+3. **Ready to test** — step 6's full message, with **Feedback folded in** filled, and its Feedback / Ship / Drop picker. Feedback from there starts at round 1 again.
 
 ## Ship
 
@@ -187,7 +189,7 @@ Print its checklist first and tick it as you go — `Ship: <title>` with `1 Revi
 
 ## Drop
 
-When the user says **drop** (or abandon, scrap it):
+When the user picks **Drop**, or says drop (or abandon, scrap it):
 
 1. Confirm first with AskUserQuestion: dropping deletes the worktree and its branch, including the spec; it can be recovered from a commit SHA for a while. **Drop it** / **Keep it**.
 2. Commit everything, uncommitted feedback included: `git add -A && git commit -m "WIP: <title> (dropped)"`.
@@ -202,7 +204,7 @@ When `/feature-flow resume <worktree-path>` started you (the original session is
 - no `Spec: …` commit → the spec was never signed off: say so and offer to continue the design with `/spec`;
 - no build commit → start at step 2 (setup; ask the user to confirm which local files to copy, since you don't have the list from before the worktree), then 3;
 - a build commit **without** `Reviewed: /code-review high --fix` → review it (against the sign-off commit) before anything else;
-- uncommitted changes → feedback rounds not yet reviewed: say so, re-run the checks they touch, and end with the round's Feedback / Done picker;
+- uncommitted changes → feedback rounds not yet reviewed: say so, re-run the checks they touch, and end with the round's Feedback / Done / Drop picker;
 - otherwise → go to step 5 (verify), then the ready message.
 
 Rebuild the checklist from what you found (and from the progress log, if it's still there), print it, and say in the ready message that this is a pickup and what you found.
