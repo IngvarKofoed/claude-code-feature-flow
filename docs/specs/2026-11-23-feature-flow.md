@@ -44,6 +44,22 @@
 > check, and returns to a full ready message with Feedback / Ship / Drop — so what ships is reviewed code the
 > user has tried. The builder runs on the model the spec's Implementation
 > strategy names (Opus only when it names none), instead of always Opus.
+>
+> **Revision 2026-11-24 — its own design flow.** What a spec contains and how
+> its fresh-eyes review runs moved out of `/spec` into two shared files,
+> `format.md` and `review.md`, in
+> [spec-format](https://github.com/IngvarKofoed/claude-code-spec-format) (the
+> split is specced in the spec repo's
+> [`docs/specs/2026-11-24-spec-format-split.md`](https://github.com/IngvarKofoed/claude-code-spec/blob/main/docs/specs/2026-11-24-spec-format-split.md)).
+> feature-flow no longer wraps `/spec`. Its own `design.md` runs the design —
+> understand, research, options, the draft in the worktree, the recap with
+> open questions in their own picker, then "Here's what you get" and the
+> three-way sign-off picker with the review starting alongside it — and reads
+> those two files for the format and the review. `SKILL.md` is now a short
+> router. `/spec` is used only as the fallback outside a main checkout. Where
+> the text below says the design runs in `/spec`, or that design mode wraps or
+> overrides it, read `design.md`. `SKILL.md`, `design.md` and `build.md` are
+> the current truth.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree

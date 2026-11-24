@@ -199,9 +199,9 @@ When the user picks **Drop**, or says drop (or abandon, scrap it):
 
 ## Picking up
 
-When `/feature-flow resume <worktree-path>` started you (the original session is gone), you've just entered the worktree. Read the spec (the one file under `docs/specs/` this branch added) and the project's `CLAUDE.md`, then work out from git where things stand:
+When `/feature-flow resume <worktree-path>` started you (the original session is gone), you've just entered the worktree. Read the spec (the one spec file this branch added, normally under `docs/specs/`) and the project's `CLAUDE.md`, then work out from git where things stand:
 
-- no `Spec: …` commit → the spec was never signed off: say so and offer to continue the design with `/spec`;
+- no `Spec: …` commit → the spec was never signed off: say so and continue the design with `design.md` from step 5 (the draft exists), after its spec-format check;
 - no build commit → start at step 2 (setup; ask the user to confirm which local files to copy, since you don't have the list from before the worktree), then 3;
 - a build commit **without** `Reviewed: /code-review high --fix` → review it (against the sign-off commit) before anything else;
 - uncommitted changes → feedback rounds not yet reviewed: say so, re-run the checks they touch, and end with the round's Feedback / Done / Drop picker;

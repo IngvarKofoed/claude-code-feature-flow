@@ -2,7 +2,7 @@
 
 A [Claude Code](https://docs.claude.com/en/docs/claude-code) skill that takes one feature from spec to `main` in **one session, in one window** — with you involved only where you're needed.
 
-1. **Design.** `/feature-flow <topic>` runs `/spec` on that topic. The spec is written in a git worktree of its own, so several features can be in flight at once, one window each.
+1. **Design.** `/feature-flow <topic>` designs the spec with you: a few approaches to pick from, then a draft you mark up, with open questions as clicks. The spec is written in a git worktree of its own, so several features can be in flight at once, one window each. What a spec contains and how its review runs come from the shared [`spec-format`](https://github.com/IngvarKofoed/claude-code-spec-format) files.
 2. **Sign off and implement.** The fresh-eyes review runs while you read. If it finds nothing for you to decide, the same session starts building.
 3. **Build.** The session hands the coding to a subagent on the model the spec's strategy chose (which may start its own helpers), copies your git-ignored local files (`.env`, local databases) into the worktree, reinstalls dependencies, fixes spec typos itself and asks you only real decisions. It reviews with `/code-review high --fix`, merges `main`, has a Sonnet checker run the spec's Outcome checks, and tells you it's ready to test.
 4. **Test.** Try it, then pick **Feedback**, **Ship** or **Drop**. Feedback rounds are quick and stay uncommitted; when you pick **Done**, it reviews and commits them all, re-checks, and you try it once more before **Ship**.
@@ -15,8 +15,8 @@ The design and its reasoning are in [`docs/specs/2026-11-23-feature-flow.md`](do
 ## Requirements
 
 - Claude Code with `EnterWorktree` / `ExitWorktree`.
-- The [`spec`](https://github.com/IngvarKofoed/claude-code-spec) skill (2026-11-23 or later).
-- A git repo whose default branch is `main` with an `origin` remote. Elsewhere it runs as plain `/spec`.
+- [`spec-format`](https://github.com/IngvarKofoed/claude-code-spec-format), the shared spec format and review. Without it, design stops with the install command: `/skill-manager:add https://github.com/IngvarKofoed/claude-code-spec-format.git --dir spec-format`.
+- A git repo whose default branch is `main` with an `origin` remote. Elsewhere it runs as plain `/spec`, which needs the [`spec`](https://github.com/IngvarKofoed/claude-code-spec) skill.
 
 ## Install
 
@@ -34,7 +34,7 @@ git clone git@github.com:IngvarKofoed/claude-code-feature-flow.git ~/.claude/ski
 
 | You type | What happens |
 |---|---|
-| `/feature-flow add rate limiting to the login endpoint` | `/spec` starts on that topic in the current repo |
+| `/feature-flow add rate limiting to the login endpoint` | Design starts on that topic in the current repo: approaches to pick from, then a draft spec in its own worktree |
 | Pick **Sign off and implement** | Review runs; then the same session builds |
 | Your answers to its questions | It carries on |
 | `status?`, any time during the build | The step checklist so far, the latest progress-log lines from the builder and its helpers, and what's still running |
