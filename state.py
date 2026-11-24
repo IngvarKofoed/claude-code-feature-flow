@@ -7,7 +7,12 @@ tracked and disappears with the worktree at ship or drop.
 
   state.py set --step NAME [--n N --of TOTAL] [--phase PHASE] [--round R] [--doing TEXT]
                [--title TITLE] [--spec PATH] [--waiting TEXT] [--worktree PATH]
-      Run inside the feature's worktree, or name it with --worktree (after ExitWorktree).
+      Run inside the feature's worktree, or name it with --worktree (after ExitWorktree),
+      or pass --pending in the main checkout before the worktree exists (design steps
+      1-3); the first `set` inside the worktree then adopts it, start time and all.
+
+  state.py clear
+      Forget this window's pending design (abandoned before it got a worktree).
       Writes the state with a UTC timestamp and this window's session id
       (CLAUDE_CODE_SESSION_ID), and composes the display step from the feature's ten
       overall steps: "4/10 Building", "9/10 Feedback round 2", "10/10 Ship". Design,
@@ -29,6 +34,8 @@ import sys
 import tempfile
 
 STATE_NAME = "feature-flow-state.json"
+PENDING_DIR = "feature-flow-pending"  # <repo>/.git/feature-flow-pending/<session id>.json
+PENDING_HIDE_AFTER_S = 24 * 60 * 60
 LOG_NAME = "feature-flow-progress.log"
 PHASES = ("design", "build", "feedback", "wrapup", "ship", "drop")
 PHASE_LABEL = {"design": "Design", "build": "Build", "feedback": "Feedback",
@@ -113,22 +120,60 @@ def display_step(phase, name, n, total, rnd):
     return ("%d/%d %s" % (n, total, label)) if (n and total) else label
 
 
-def cmd_set(a):
-    worktree = os.path.abspath(a.worktree) if a.worktree else find_checkout(os.getcwd())
-    git_dir = linked_git_dir(worktree) if worktree else None
-    if not git_dir:
-        sys.exit("state.py set: not in a feature worktree; run it inside one, or pass --worktree")
-    common = os.path.dirname(os.path.dirname(git_dir))  # <repo>/.git/worktrees/<name> -> <repo>/.git
-    branch = read_branch(git_dir)
+def load_json(path):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
 
-    path = os.path.join(git_dir, STATE_NAME)
-    state = {}
-    if os.path.exists(path):
-        try:
-            with open(path) as f:
-                state = json.load(f)
-        except (OSError, ValueError):
-            state = {}
+
+def write_json(path, data):
+    d = os.path.dirname(path)
+    os.makedirs(d, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=d, prefix=".ff-state-")
+    with os.fdopen(fd, "w") as f:
+        json.dump(data, f, indent=2)
+        f.write("\n")
+    os.replace(tmp, path)
+
+
+def pending_path(common, sid):
+    """Before the worktree exists (design steps 1-3, in the main checkout) the state lives
+    in the repo's own git dir, under this window's session id."""
+    return os.path.join(common, PENDING_DIR, "%s.json" % sid)
+
+
+def cmd_set(a):
+    sid = os.environ.get("CLAUDE_CODE_SESSION_ID")
+    pending = None
+    if a.pending:
+        root = find_checkout(os.getcwd())
+        common = os.path.join(root, ".git") if root else None
+        if not common or not os.path.isdir(common):
+            sys.exit("state.py set --pending: run it in the repo's main checkout")
+        if not sid:
+            sys.exit("state.py set --pending: needs CLAUDE_CODE_SESSION_ID to key the file")
+        worktree, git_dir, branch = None, None, read_branch(common)
+        path = pending_path(common, sid)
+        state = load_json(path)
+    else:
+        worktree = os.path.abspath(a.worktree) if a.worktree else find_checkout(os.getcwd())
+        git_dir = linked_git_dir(worktree) if worktree else None
+        if not git_dir:
+            sys.exit("state.py set: not in a feature worktree; run it inside one, pass --worktree, "
+                     "or pass --pending before the worktree exists")
+        common = os.path.dirname(os.path.dirname(git_dir))  # <repo>/.git/worktrees/<name> -> <repo>/.git
+        branch = read_branch(git_dir)
+        path = os.path.join(git_dir, STATE_NAME)
+        state = load_json(path)
+        # The design's early steps were kept under this session before the worktree
+        # existed: adopt them (title, start time) and retire that file.
+        if sid and not state:
+            pending = pending_path(common, sid)
+            state = load_json(pending)
+            for k in ("pending", "state_file"):
+                state.pop(k, None)
 
     if a.n is None:
         a.n = PHASE_STEP.get(a.phase or state.get("phase"))
@@ -148,6 +193,7 @@ def cmd_set(a):
     repo = os.path.dirname(common) if os.path.basename(common) == ".git" else common
     state.update(
         {
+            "pending": bool(a.pending),
             "version": 2,
             "title": title,
             "phase": phase,
@@ -167,7 +213,7 @@ def cmd_set(a):
             "worktree": worktree,
             "branch": branch,
             "spec": a.spec or state.get("spec"),
-            "progress_log": os.path.join(git_dir, LOG_NAME),
+            "progress_log": os.path.join(git_dir, LOG_NAME) if git_dir else None,
         }
     )
     if a.waiting:
@@ -175,11 +221,20 @@ def cmd_set(a):
     else:
         state["waiting_since"] = None
 
-    fd, tmp = tempfile.mkstemp(dir=git_dir, prefix=".ff-state-")
-    with os.fdopen(fd, "w") as f:
-        json.dump(state, f, indent=2)
-        f.write("\n")
-    os.replace(tmp, path)
+    write_json(path, state)
+    if pending and os.path.exists(pending):
+        os.remove(pending)
+
+
+def cmd_clear(a):
+    """Forget this window's pending design (abandoned before it got a worktree)."""
+    sid = os.environ.get("CLAUDE_CODE_SESSION_ID")
+    root = find_checkout(os.getcwd())
+    if not (sid and root and os.path.isdir(os.path.join(root, ".git"))):
+        sys.exit("state.py clear: run it in the repo's main checkout, in the session that started the design")
+    p = pending_path(os.path.join(root, ".git"), sid)
+    if os.path.exists(p):
+        os.remove(p)
 
 
 def find_states(roots):
@@ -189,6 +244,8 @@ def find_states(roots):
         for pattern in (
             os.path.join(root, ".git", "worktrees", "*", STATE_NAME),
             os.path.join(root, "*", ".git", "worktrees", "*", STATE_NAME),
+            os.path.join(root, ".git", PENDING_DIR, "*.json"),
+            os.path.join(root, "*", ".git", PENDING_DIR, "*.json"),
         ):
             for path in glob.glob(pattern):
                 real = os.path.realpath(path)
@@ -211,6 +268,8 @@ def load_states(roots):
             continue  # worktree removed by hand; nothing to show
         s["state_file"] = path
         s["age_seconds"] = int((now - updated).total_seconds())
+        if s.get("pending") and s["age_seconds"] > PENDING_HIDE_AFTER_S:
+            continue  # a design abandoned before its worktree; not worth listing
         since = s.get("waiting_since") if s.get("waiting_for_user") else None
         try:
             s["waiting_seconds"] = int((now - parse_iso(since)).total_seconds()) if since else None
@@ -255,6 +314,8 @@ def cmd_status(a):
     for s in states:
         if s.get("waiting_for_user"):
             mark, step = "!", "%s: your turn (%s)" % (s.get("step"), s.get("waiting_for"))
+        elif s["quiet"] and s.get("pending"):
+            mark, step = "?", "%s: quiet; session gone? (no worktree yet)" % s.get("step")
         elif s["quiet"]:
             mark, step = "?", "%s: quiet; session gone? /feature-flow resume %s" % (s.get("step"), s.get("worktree"))
         else:
@@ -276,11 +337,14 @@ def main():
     s.add_argument("--of", type=int, help="overall steps (default 10)")
     s.add_argument("--round", type=int, help="feedback round number")
     s.add_argument("--worktree", help="the feature's worktree, when not running inside it")
+    s.add_argument("--pending", action="store_true",
+                   help="before the worktree exists: keep the state under this session in the main checkout")
     s.add_argument("--doing", help="what the step is doing, in a few words (the checklist line's detail)")
     s.add_argument("--phase", choices=PHASES)
     s.add_argument("--title")
     s.add_argument("--spec")
     s.add_argument("--waiting", help="what the user needs to do; omit when working")
+    sub.add_parser("clear", help="forget this window's pending design")
     st = sub.add_parser("status")
     st.add_argument("--json", action="store_true")
     st.add_argument("--roots")
@@ -289,6 +353,8 @@ def main():
         cmd_set(a)
     elif a.cmd == "status":
         cmd_status(a)
+    elif a.cmd == "clear":
+        cmd_clear(a)
     else:
         p.print_help()
         sys.exit(2)

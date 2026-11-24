@@ -118,6 +118,14 @@
 > the only numbers shown anywhere: `build.md`'s sections are renumbered 2–10 to
 > match, the build checklist prints all ten, and the feedback-round and ship
 > checklists lose their numbers.
+>
+> **Revision 2026-11-24 — the design shows from its first question.** In use,
+> the status line showed only the branch while the user was answering the
+> first design questions: the worktree (and so the state file) only exists from
+> the draft. The design now starts a pending state file in the main checkout's
+> git dir, keyed by the window's session id (`state.py set --pending`); the
+> first `set` in the worktree adopts it, and `state.py clear` drops an
+> abandoned one. Status line and `/feature-flow status` read both.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree
