@@ -49,6 +49,22 @@ Append one line per milestone — `printf '%s %s\n' "$(date +%H:%M)" "<who>: <wh
 
 **Questions to the user** say what the choice changes and, when it's not obvious, show a short concrete example. Option labels stand on their own.
 
+## Keeping the spec in sync
+
+The spec ships with the code, so whenever you hand the user something to test, the spec must describe what they're testing. You own the spec and keep it true; the builder reports, you decide. The user is asked only about what's important.
+
+**In sync means** nothing in the spec is false about the build, and every choice the builder made where the spec was silent, and that a user or a later reader would notice (behavior, look, data, an interface), has a line in the spec: in Design, or in Key decisions if it's load-bearing. Internal details such as names, structure and how it's done stay out; the spec isn't the implementation.
+
+**The sync pass** runs whenever a builder or fixer returns, and again if the code review's fixes change behavior the spec describes. Its input is what the builder returned: the spec fixes it made, every place it chose where the spec was silent or unclear, every deviation, plus what the review couldn't settle. Take the items that matter: anything that blocked, forced a deviation, needed a choice between readings that build different things, shows the spec contradicting itself or the code, or leaves an Outcome bullet unverifiable, and every silent choice a user would notice. Leave out wording, typos, and details filled the obvious way with no real risk. Sort each into one of three:
+
+1. **The spec was silent or wrong, and the build's choice is sensible.** Write the choice into the spec so it reads true, and list it. Most items land here. *Example: the "10" on the ten planks is 16 px, because 13 px read too small next to the icon — one line in Design.*
+2. **The build is wrong and the spec is right.** Back to the builder to fix (SendMessage), then the pass again on what it returns.
+3. **Your call.** Only when it's important: the build contradicts or changes an Outcome bullet; an Outcome bullet can't be verified as written; the choice goes against something the user said or the spec states and the intent is unclear; or it's hard to undo (saved data, a public contract, deleting something). Meanwhile keep what was built and write it into the spec as it stands, so code and spec agree even if the user never answers. *Example: the "10" is cream, but the spec says "gold is the color for controls" — was the label meant to be gold too?*
+
+**Asking.** Your-call items go to the user with the next ready message, never mid-build (a builder that's blocked asks at once, as step 3 says). Each is a question in the ready picker, ahead of its last question: what's at stake in a sentence, a concrete example, then **Keep as built (Recommended)** first and the real alternatives after it. At most three per picker; more go in an earlier picker. **Keep as built** needs nothing more. Any other answer is feedback: it starts a round (spec first, then the fixer), whatever the picker's last answer was, and you say so in a line. Outcome changes only on the user's answer.
+
+**The checklist** shows the pass on the line that ran it, for example `✓ 3 Building: builder on Sonnet; spec: 2 lines added, 1 your call`.
+
 ## 1. Sign-off commit
 
 `git add <spec-path>` and `git commit -m "Spec: <title>"` — the spec file alone; check `git status` first and leave anything else be. This commit is the sign-off: the checker reads Outcome from it, and the ready message reports every spec change since it. Find it later with `git log --diff-filter=A --format=%H -1 -- <spec-path>`.
@@ -74,13 +90,15 @@ Start the builder subagent and brief it with:
 - **spec issues:** a text bug with one obvious fix (a typo, two sections that disagree where one is clearly meant, a stale name) gets fixed in the spec and listed; anything with more than one plausible build is **not guessed** — it stops and returns the question, with what each option would build. Outcome is never edited;
 - the safety rules above, and that it doesn't commit, push or touch the main checkout;
 - the progress log path, and that it and every helper it starts append a line per milestone (see "Progress you can see"), with `builder` or `builder/<chunk>` as `<who>`;
-- what to return: what was built, the spec fixes made, the deviations (each tracing to a spec problem, or reverted as scope creep), anything still open, and what it started that is still running.
+- what to return: what was built; the spec fixes made; every place the spec was silent or unclear, what it chose and why; the deviations (each tracing to a spec problem, or reverted as scope creep); anything still open; and what it started that is still running.
+
+**When the builder is done,** run the sync pass ("Keeping the spec in sync") before step 4, so the spec's new lines are committed with the code.
 
 **When the builder returns a question,** ask the user (AskUserQuestion, plainly, with what each option builds), end the turn, and when answered, update the spec to match and send the answer to the same builder with SendMessage so it continues with its context. If it can't be resumed, start a fresh builder on the same model with the spec, the current diff and the answer.
 
 ## 4. Review and commit
 
-1. Run `/code-review high --fix` on the uncommitted diff, plus any extra gate the project's `CLAUDE.md` requires. Read what it changed.
+1. Run `/code-review high --fix` on the uncommitted diff, plus any extra gate the project's `CLAUDE.md` requires. Read what it changed. If its fixes change behavior the spec describes, run the sync pass on them now.
 2. Commit everything (`git add -A` — copied ignored files stay out) with a message in the repo's style naming the feature, ending with the line `Reviewed: /code-review high --fix`. That line is how a later pickup knows the review ran.
 3. `git fetch origin`, then `git merge origin/main`, then `git merge main`.
 4. A merge conflict's resolution is authored work: resolve it, run `/code-review high --fix` on the resolution, then commit.
@@ -90,6 +108,7 @@ Start the builder subagent and brief it with:
 - Start what the checks need (the app, on your ports) and add it to the list of started processes.
 - Give a **fresh subagent on Sonnet** (`model: "sonnet"`) the Outcome section from the sign-off commit — `git show <sign-off>:<spec-path>`, not the working copy — the worktree path, and how to reach what's running. It runs each **How to verify** bullet and reports **pass**, **fail**, or **can't verify** with the reason and the evidence. It changes no files (except appending a `checker:` line per bullet to the progress log) and stops anything it starts itself.
 - A failure: have the builder fix it (SendMessage), review the fix, commit, and check again. After three rounds on the same bullet, stop and report it as failing.
+- A **can't verify** caused by the bullet's wording rather than the build is a Your-call item ("Keeping the spec in sync"): Outcome changes only on the user's answer.
 - Note the commit the checks ran on.
 
 ## 6. Ready message
@@ -103,14 +122,14 @@ What was built: <2–4 lines>
 Feedback folded in: <each round since the build, in a few words — leave the line out before any feedback>
 Checks (on <short sha>): <each How-to-verify bullet: pass / fail / can't verify — why>
 Spec changes since sign-off: <summary of `git diff <sign-off> -- <spec-path>`, or "none">
-Deviations: <each with its reason, or "none">
-Review couldn't settle: <or "nothing">
+Spec issues: <each item from the sync pass and what was done: written into the spec / fixed in the code / your call below — or "none">
+Not settled: <what's left that isn't a spec issue, e.g. untested on a real phone — or "nothing">
 Try it: <commands, URLs and ports; what's running, and that it's stopped at ship>
 Steps: <the full checklist, all ticked, with any repeats noted>
 "status?" works any time.
 ```
 
-Then ask with AskUserQuestion, one question — *"Tried it? Change something, ship, or drop?"*:
+Then ask with AskUserQuestion: any Your-call questions from the sync pass first, then this one last — *"Tried it? Change something, ship, or drop?"*:
 
 - **Feedback** — "Type what to change in Other, or pick this and tell me next."
 - **Ship** — "Lands it on main and pushes."
@@ -140,6 +159,7 @@ Feedback <n>: <a few words>
    - **A small, mechanical change** that needs no investigation — a label, a color, a constant, in one file — may go to a fresh Sonnet subagent (`model: "sonnet"`) instead, briefed the same way.
    - Every brief carries the user's words verbatim and this round's spec change. **A reported bug is reproduced first:** the fixer reproduces it, fixes it, and shows it's gone. If it can't reproduce it, it doesn't guess — it returns what it tried, and you ask the user (plainly, saying what was tried) and end the turn.
    - Questions the fixer returns go to the user as in step 3.
+   - Ask the fixer to return what step 3 asks of the builder, and when it's done, run the sync pass ("Keeping the spec in sync").
 3. **Checks.** A fresh Sonnet checker re-runs the How-to-verify bullets the change touches (read from the sign-off commit, as in step 5), plus one check for the feedback itself, written from the user's words ("the repeating row's font size can be changed"). A failure goes back to the fixer — up to three rounds, as in step 5.
 4. **Ready to test** — end the turn with this message and the **Feedback / Done / Drop** picker after it:
 
@@ -148,13 +168,14 @@ Ready to test: <title> — round <n>
 
 What changed: <1–3 lines>
 Checks: <each bullet re-run, and the feedback check: pass / fail / can't verify — why>
-Spec changes this round: <one line, or "none">
+Spec changes this round: <the feedback's spec change and what the sync pass wrote in, or "none">
+Spec issues: <each sync-pass item and what was done, or "none">
 Try it: <what's running and where; anything new about how to reach it>
 Steps: <this round's checklist, all ticked>
 Not reviewed or committed yet. "status?" works any time.
 ```
 
-Then ask with AskUserQuestion, one question — *"Tried it? More to change, done, or drop?"*:
+Then ask with AskUserQuestion: any Your-call questions from the sync pass first, then this one last — *"Tried it? More to change, done, or drop?"*:
 
 - **Feedback** — "Type what to change in Other, or pick this and tell me next."
 - **Done — review and commit** — "Reviews and commits all the feedback so far and re-runs every check; then you try it once more before shipping."
@@ -166,7 +187,7 @@ Then ask with AskUserQuestion, one question — *"Tried it? More to change, done
 
 When the user picks **Done** (or says "done", "that's it"), print `Wrap-up: <title>` with `· 1 Review and commit`, `· 2 Checks`, `· 3 Ready to test`, and tick it as usual:
 
-1. **Review and commit** — step 4 on the uncommitted diff: `/code-review high --fix` plus any project gate, a commit in the repo's style naming the feature and the feedback, ending with the `Reviewed: /code-review high --fix` line, then fetch and merge `origin/main` and `main`.
+1. **Review and commit** — step 4 on the uncommitted diff: `/code-review high --fix` plus any project gate (and the sync pass if its fixes change behavior the spec describes), a commit in the repo's style naming the feature and the feedback, ending with the `Reviewed: /code-review high --fix` line, then fetch and merge `origin/main` and `main`.
 2. **Checks** — step 5 in full: every How-to-verify bullet, plus each round's feedback check.
 3. **Ready to test** — step 6's full message, with **Feedback folded in** filled, and its Feedback / Ship / Drop picker. Feedback from there starts at round 1 again.
 
@@ -174,7 +195,7 @@ When the user picks **Done** (or says "done", "that's it"), print `Wrap-up: <tit
 
 Print its checklist first and tick it as you go — `Ship: <title>` with `1 Review feedback`, `2 Merge main`, `3 Checks`, `4 Unpushed commits`, `5 Fast-forward main`, `6 Push`, `7 Clean up` — and log each step.
 
-1. If there are uncommitted changes: `/code-review high --fix` on them (plus any extra project gate), then commit.
+1. If there are uncommitted changes: `/code-review high --fix` on them (plus any extra project gate, and the sync pass if its fixes change behavior the spec describes), then commit.
 2. `git fetch origin`, merge `origin/main`, merge `main`. A conflict resolution gets reviewed before its commit.
 3. If step 1 changed code or step 2 brought in anything new, run the checks again (section 5). A failure stops the ship: report it and wait.
 4. **Unpushed commits on local `main`:** `git log --oneline origin/main..main`. These aren't this feature's, and the push would take them along. If there are any, list them and ask: **Push them too** / **Stop** — and wait.

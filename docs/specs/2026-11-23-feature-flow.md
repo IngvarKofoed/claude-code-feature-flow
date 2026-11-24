@@ -45,6 +45,16 @@
 > user has tried. The builder runs on the model the spec's Implementation
 > strategy names (Opus only when it names none), instead of always Opus.
 >
+> **Revision 2026-11-24 — spec kept in sync with the build.** The old
+> implementer report's "Spec issues" section, which the user carried to the
+> spec session, has no carrier here, and in use the builder's own choices
+> (where the spec was silent) were reported but never written back. Now a
+> sync pass runs whenever a builder or fixer returns: sensible choices are
+> written into the spec, real bugs go back to the builder, and only
+> important calls (Outcome, unclear intent, hard to undo) reach the user, as
+> "Keep as built (Recommended)" questions in the next ready picker. The
+> ready message's "Deviations" line became "Spec issues".
+>
 > **Revision 2026-11-24 — its own design flow.** What a spec contains and how
 > its fresh-eyes review runs moved out of `/spec` into two shared files,
 > `format.md` and `review.md`, in
