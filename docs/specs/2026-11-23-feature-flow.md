@@ -35,6 +35,15 @@
 > session never investigates or edits code. A reported bug is reproduced
 > before it's fixed. Each round gets its own checklist, a checker run that
 > includes the feedback itself, and a "Ready to test — round n" message.
+>
+> **Revision 2026-11-24 — the feedback loop and the builder's model.** Every
+> ready message now ends with a picker. After the build (reviewed and
+> committed): **Feedback** / **Ship**. Feedback rounds stay uncommitted and
+> unreviewed and end with **Feedback** / **Done — review and commit**; Done
+> reviews and commits all rounds, re-runs every check, and returns to a full
+> ready message with Feedback / Ship — so what ships is reviewed code the
+> user has tried. The builder runs on the model the spec's Implementation
+> strategy names (Opus only when it names none), instead of always Opus.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree

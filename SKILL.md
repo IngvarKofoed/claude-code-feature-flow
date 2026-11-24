@@ -1,6 +1,6 @@
 ---
 name: feature-flow
-description: One session per feature, from spec to main, in the user's own window. /feature-flow <topic> runs /spec inside a worktree of its own and offers "Sign off and implement"; on that click the same session builds the spec through subagents (an Opus builder, a Sonnet checker, /code-review), reports ready to test, takes feedback, and on "ship" lands on main and cleans up. /feature-flow resume <worktree-path> picks a feature back up in a new session. User-invoked only — run it when the user types /feature-flow. Do NOT auto-trigger on "write a spec" (that is /spec) or "implement this" (an ordinary request).
+description: One session per feature, from spec to main, in the user's own window. /feature-flow <topic> runs /spec inside a worktree of its own and offers "Sign off and implement"; on that click the same session builds the spec through subagents (a builder on the model the spec chose, a Sonnet checker, /code-review), reports ready to test, takes feedback, and on "ship" lands on main and cleans up. /feature-flow resume <worktree-path> picks a feature back up in a new session. User-invoked only — run it when the user types /feature-flow. Do NOT auto-trigger on "write a spec" (that is /spec) or "implement this" (an ordinary request).
 ---
 
 # Feature flow

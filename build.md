@@ -1,8 +1,8 @@
 # Feature flow — build
 
-You are the same session the user designed in, now inside the feature's worktree, building the signed-off spec. The user talks only to you. The work itself goes to subagents — an **Opus builder** for the code, a **Sonnet checker** for the Outcome checks, and `/code-review` — and they may start their own helpers. That holds for every feedback round too: you never write or debug code yourself. Never start another session.
+You are the same session the user designed in, now inside the feature's worktree, building the signed-off spec. The user talks only to you. The work itself goes to subagents — a **builder** for the code, on the model the spec's Implementation strategy chose, a **Sonnet checker** for the Outcome checks, and `/code-review` — and they may start their own helpers. That holds for every feedback round too: you never write or debug code yourself. Never start another session.
 
-**When you end a turn, the user may be away.** End one only with a question that needs them, the ready message, or a final ship/drop message — not to report progress. (Checklist lines, below, are printed while you keep working; they never end a turn.) Each starts with a first line that reads well on its own, for example `Ready to test: <title>` or `Need a decision: <title>`.
+**When you end a turn, the user may be away.** End one only with a question that needs them, a ready message with its picker, or a final ship/drop message — not to report progress. (Checklist lines, below, are printed while you keep working; they never end a turn.) Each starts with a first line that reads well on its own, for example `Ready to test: <title>` or `Need a decision: <title>`.
 
 **Inside the worktree, git can't reach the main checkout:** Claude Code refuses `git -C <main checkout> …` from a session that entered a worktree. Everything up to ship runs here (local `main` and `origin/main` are shared refs, so `git merge main` and `git log origin/main..main` work). At ship or drop you step out with `ExitWorktree` (`keep`) and run the few main-checkout commands from there.
 
@@ -22,7 +22,7 @@ Build: <title>
 · 6 Ready to test
 ```
 
-Then, every time a step starts or finishes, print just that one line with its new mark and a few words of detail — `▶ 3 Building: Opus builder, 2 chunks (API, UI)`, `✓ 2 Copy set up: .env copied, deps installed, ports 8612/8613`, `! 5 Checks: 1 failed, fixing (round 1)`. Marks: `·` not started, `▶` running, `✓` done, `!` needs the user or failed. Scrolling up then shows the whole history. Repeated steps say so ("Checks: failed once, fixed"). The full list, all ticked, ends the ready message. Ship and drop get their own short checklists the same way.
+Then, every time a step starts or finishes, print just that one line with its new mark and a few words of detail — `▶ 3 Building: builder on Sonnet, 2 chunks (API, UI)`, `✓ 2 Copy set up: .env copied, deps installed, ports 8612/8613`, `! 5 Checks: 1 failed, fixing (round 1)`. Marks: `·` not started, `▶` running, `✓` done, `!` needs the user or failed. Scrolling up then shows the whole history. Repeated steps say so ("Checks: failed once, fixed"). The full list, all ticked, ends the ready message. Ship and drop get their own short checklists the same way.
 
 **The progress log.** One file per feature, outside the repo's tracked files and removed with the worktree:
 `$(git rev-parse --git-dir)/feature-flow-progress.log`
@@ -62,19 +62,21 @@ Append one line per milestone — `printf '%s %s\n' "$(date +%H:%M)" "<who>: <wh
 - **Dependencies:** run the repo's own install steps, from its `CLAUDE.md`, README or manifests.
 - **Run your copy the repo's way.** Where the project's `CLAUDE.md` describes how to run a second copy (mermaid-office has a separate `:8612`/`:8613` instance), follow it. Otherwise change ports only through environment variables or command-line flags — never by editing tracked files. If neither works, note in the ready message that this build can't run alongside another copy; never stop someone else's server to make room.
 
-## 3. Build — the Opus builder
+## 3. Build — the builder
 
-Start a subagent on Opus (`model: "opus"`) and brief it with:
+**Its model is the one the spec's Implementation strategy names** — the design session chose it, and the user signed off on it. Pass it as `model` (`"sonnet"`, `"opus"`, `"fable"`, …) and name it in the checklist line. Only if the strategy names no model, use Opus. The same model serves the builder for the whole feature, fresh builders included.
+
+Start the builder subagent and brief it with:
 
 - the spec path, the worktree path, and the sign-off commit;
-- the spec's **Implementation strategy** — if it says multi-agent, the builder leads and delegates the chunks it names to its own subagents;
+- the spec's **Implementation strategy** — if it says multi-agent, the builder leads and delegates the chunks it names to its own subagents, on the models it names;
 - the project `CLAUDE.md`'s rules, including the changelog entry it requires;
 - **spec issues:** a text bug with one obvious fix (a typo, two sections that disagree where one is clearly meant, a stale name) gets fixed in the spec and listed; anything with more than one plausible build is **not guessed** — it stops and returns the question, with what each option would build. Outcome is never edited;
 - the safety rules above, and that it doesn't commit, push or touch the main checkout;
 - the progress log path, and that it and every helper it starts append a line per milestone (see "Progress you can see"), with `builder` or `builder/<chunk>` as `<who>`;
 - what to return: what was built, the spec fixes made, the deviations (each tracing to a spec problem, or reverted as scope creep), anything still open, and what it started that is still running.
 
-**When the builder returns a question,** ask the user (AskUserQuestion, plainly, with what each option builds), end the turn, and when answered, update the spec to match and send the answer to the same builder with SendMessage so it continues with its context. If it can't be resumed, start a fresh Opus builder with the spec, the current diff and the answer.
+**When the builder returns a question,** ask the user (AskUserQuestion, plainly, with what each option builds), end the turn, and when answered, update the spec to match and send the answer to the same builder with SendMessage so it continues with its context. If it can't be resumed, start a fresh builder on the same model with the spec, the current diff and the answer.
 
 ## 4. Review and commit
 
@@ -92,24 +94,34 @@ Start a subagent on Opus (`model: "opus"`) and brief it with:
 
 ## 6. Ready message
 
-Leave the app running for the user to try, then end the turn with the message below. **Try it** sits near the end, just above Steps, so the user finds it without scrolling up.
+Leave the app running for the user to try, then end the turn with the message below and the **Feedback / Ship** picker after it. **Try it** sits near the end, just above Steps, so the user finds it without scrolling up.
 
 ```
 Ready to test: <title>
 
 What was built: <2–4 lines>
+Feedback folded in: <each round since the build, in a few words — leave the line out before any feedback>
 Checks (on <short sha>): <each How-to-verify bullet: pass / fail / can't verify — why>
 Spec changes since sign-off: <summary of `git diff <sign-off> -- <spec-path>`, or "none">
 Deviations: <each with its reason, or "none">
 Review couldn't settle: <or "nothing">
 Try it: <commands, URLs and ports; what's running, and that it's stopped at ship>
 Steps: <the full checklist, all ticked, with any repeats noted>
-Next: tell me what to change, or say "ship" to land it, or "drop" to abandon it. "status?" works any time.
+"drop" abandons it; "status?" works any time.
 ```
+
+Then ask with AskUserQuestion, one question — *"Tried it? Change something, or ship?"*:
+
+- **Feedback** — "Type what to change in Other, or pick this and tell me next."
+- **Ship** — "Lands it on main and pushes."
+
+Text typed in Other is the feedback (or "drop", or "status?"). **Feedback** picked with no text: ask "What should change?" in one line and end the turn.
 
 ## Feedback
 
-Every user message after a ready message that isn't ship, drop or `status?` is feedback, and starts a **round**. You run the round the way you ran the build: subagents do the work. **Never investigate, reproduce or change code yourself in a round — not even a one-line tweak.** Your part is the spec, the briefs, the checklist and the messages. A question about the build ("why does X do Y?") isn't a round: answer it, asking the builder when the answer needs a look at the code. A message that arrives while a round is running joins it: pass it to the fixer and say so in a line.
+**The loop.** A ready message's work is reviewed and committed. Feedback after it runs in **rounds** that stay uncommitted and unreviewed, so each one is quick; after each, the user tests and picks more **Feedback** or **Done**. **Done** reviews and commits all the rounds at once, re-runs every check, and ends with a full ready message (step 6) — back where the build ended, with Feedback / Ship. So what ships is always reviewed code the user has tried. Rounds are numbered from 1 after each full ready message.
+
+Feedback is anything the user sends from a picker's Other box, or after picking Feedback, that isn't ship, drop, done or `status?`. Each one starts a round. You run the round the way you ran the build: subagents do the work. **Never investigate, reproduce or change code yourself in a round — not even a one-line tweak.** Your part is the spec, the briefs, the checklist and the messages. A question about the build ("why does X do Y?") isn't a round: answer it, asking the builder when the answer needs a look at the code. A message that arrives while a round is running joins it: pass it to the fixer and say so in a line.
 
 Print the round's checklist and tick it like the build's, logging each step:
 
@@ -123,12 +135,12 @@ Feedback <n>: <a few words>
 
 1. **Spec first.** If the feedback changes behavior the spec describes, or adds some, update the spec before briefing anyone (Design, Key decisions, Goals) so the fixer works from it, and say in one line what changed; otherwise tick the step "no change". Outcome stays as signed: if the feedback contradicts an Outcome bullet, say which and ask before going on.
 2. **Fixing — delegated.**
-   - **Default: the Opus builder** (SendMessage), which already knows the code. If it can't be resumed, brief a fresh Opus builder with the spec, the diff since sign-off, and the feedback, plus the brief items from step 3 (safety, the log, what to return).
+   - **Default: the builder** (SendMessage), which already knows the code. If it can't be resumed, brief a fresh builder on the same model with the spec, the diff since sign-off, and the feedback, plus the brief items from step 3 (safety, the log, what to return).
    - **A small, mechanical change** that needs no investigation — a label, a color, a constant, in one file — may go to a fresh Sonnet subagent (`model: "sonnet"`) instead, briefed the same way.
    - Every brief carries the user's words verbatim and this round's spec change. **A reported bug is reproduced first:** the fixer reproduces it, fixes it, and shows it's gone. If it can't reproduce it, it doesn't guess — it returns what it tried, and you ask the user (plainly, saying what was tried) and end the turn.
    - Questions the fixer returns go to the user as in step 3.
 3. **Checks.** A fresh Sonnet checker re-runs the How-to-verify bullets the change touches (read from the sign-off commit, as in step 5), plus one check for the feedback itself, written from the user's words ("the repeating row's font size can be changed"). A failure goes back to the fixer — up to three rounds, as in step 5.
-4. **Ready to test** — end the turn with:
+4. **Ready to test** — end the turn with this message and the **Feedback / Done** picker after it:
 
 ```
 Ready to test: <title> — round <n>
@@ -138,10 +150,23 @@ Checks: <each bullet re-run, and the feedback check: pass / fail / can't verify 
 Spec changes this round: <one line, or "none">
 Try it: <what's running and where; anything new about how to reach it>
 Steps: <this round's checklist, all ticked>
-Next: test it, then tell me what to change, or say "ship" to land it, or "drop" to abandon it. "status?" works any time.
+Not reviewed or committed yet. "drop" abandons it; "status?" works any time.
 ```
 
-Changes stay uncommitted between rounds; ship reviews and commits them all at once.
+Then ask with AskUserQuestion, one question — *"Tried it? More to change, or done?"*:
+
+- **Feedback** — "Type what to change in Other, or pick this and tell me next."
+- **Done — review and commit** — "Reviews and commits all the feedback so far and re-runs every check; then you try it once more before shipping."
+
+**Ship** typed during the rounds skips that last try: ship's step 1 reviews and commits the rounds, and its checks run as usual.
+
+### Done with feedback
+
+When the user picks **Done** (or says "done", "that's it"), print `Wrap-up: <title>` with `· 1 Review and commit`, `· 2 Checks`, `· 3 Ready to test`, and tick it as usual:
+
+1. **Review and commit** — step 4 on the uncommitted diff: `/code-review high --fix` plus any project gate, a commit in the repo's style naming the feature and the feedback, ending with the `Reviewed: /code-review high --fix` line, then fetch and merge `origin/main` and `main`.
+2. **Checks** — step 5 in full: every How-to-verify bullet, plus each round's feedback check.
+3. **Ready to test** — step 6's full message, with **Feedback folded in** filled, and its Feedback / Ship picker. Feedback from there starts at round 1 again.
 
 ## Ship
 
@@ -177,7 +202,7 @@ When `/feature-flow resume <worktree-path>` started you (the original session is
 - no `Spec: …` commit → the spec was never signed off: say so and offer to continue the design with `/spec`;
 - no build commit → start at step 2 (setup; ask the user to confirm which local files to copy, since you don't have the list from before the worktree), then 3;
 - a build commit **without** `Reviewed: /code-review high --fix` → review it (against the sign-off commit) before anything else;
-- uncommitted changes → treat them as unreviewed feedback;
+- uncommitted changes → feedback rounds not yet reviewed: say so, re-run the checks they touch, and end with the round's Feedback / Done picker;
 - otherwise → go to step 5 (verify), then the ready message.
 
 Rebuild the checklist from what you found (and from the progress log, if it's still there), print it, and say in the ready message that this is a pickup and what you found.
