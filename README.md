@@ -38,7 +38,7 @@ git clone git@github.com:IngvarKofoed/claude-code-feature-flow.git ~/.claude/ski
 | Pick **Sign off and implement** | Review runs; then the same session builds |
 | Your answers to its questions | It carries on |
 | `status?`, any time during the build | The step checklist so far, the latest progress-log lines from the builder and its helpers, and what's still running |
-| Feedback, after **Ready to test** | It changes, re-checks, and reports |
+| Feedback, after **Ready to test** | It updates the spec if needed, has a subagent make the change, re-checks, and reports **Ready to test** again |
 | `ship` | Land on `main`, push, clean up |
 | `drop` | Abandon it (asks first; recoverable from the printed SHA) |
 

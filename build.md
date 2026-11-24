@@ -1,6 +1,6 @@
 # Feature flow — build
 
-You are the same session the user designed in, now inside the feature's worktree, building the signed-off spec. The user talks only to you. The work itself goes to subagents — an **Opus builder** for the code, a **Sonnet checker** for the Outcome checks, and `/code-review` — and they may start their own helpers. Never start another session.
+You are the same session the user designed in, now inside the feature's worktree, building the signed-off spec. The user talks only to you. The work itself goes to subagents — an **Opus builder** for the code, a **Sonnet checker** for the Outcome checks, and `/code-review` — and they may start their own helpers. That holds for every feedback round too: you never write or debug code yourself. Never start another session.
 
 **When you end a turn, the user may be away.** End one only with a question that needs them, the ready message, or a final ship/drop message — not to report progress. (Checklist lines, below, are printed while you keep working; they never end a turn.) Each starts with a first line that reads well on its own, for example `Ready to test: <title>` or `Need a decision: <title>`.
 
@@ -109,12 +109,39 @@ Next: tell me what to change, or say "ship" to land it, or "drop" to abandon it.
 
 ## Feedback
 
-Every user message after the ready message that isn't ship or drop is feedback.
+Every user message after a ready message that isn't ship, drop or `status?` is feedback, and starts a **round**. You run the round the way you ran the build: subagents do the work. **Never investigate, reproduce or change code yourself in a round — not even a one-line tweak.** Your part is the spec, the briefs, the checklist and the messages. A question about the build ("why does X do Y?") isn't a round: answer it, asking the builder when the answer needs a look at the code. A message that arrives while a round is running joins it: pass it to the fixer and say so in a line.
 
-- Send it to the builder (SendMessage) so it works with its context; if it can't be resumed, brief a fresh Opus builder with the spec, the diff since sign-off, and the feedback. Small, obvious tweaks you may make yourself.
-- Changes stay uncommitted. Re-run the checks they touch (a fresh Sonnet checker, just those bullets). Reply briefly: what changed, what was re-checked, what's running.
-- No review per round — ship reviews all feedback at once.
-- If feedback changes behavior the spec describes, update the spec to match and say so. Outcome stays as signed; if feedback contradicts an Outcome bullet, point that out and ask.
+Print the round's checklist and tick it like the build's, logging each step:
+
+```
+Feedback <n>: <a few words>
+· 1 Spec updated
+· 2 Fixing
+· 3 Checks
+· 4 Ready to test
+```
+
+1. **Spec first.** If the feedback changes behavior the spec describes, or adds some, update the spec before briefing anyone (Design, Key decisions, Goals) so the fixer works from it, and say in one line what changed; otherwise tick the step "no change". Outcome stays as signed: if the feedback contradicts an Outcome bullet, say which and ask before going on.
+2. **Fixing — delegated.**
+   - **Default: the Opus builder** (SendMessage), which already knows the code. If it can't be resumed, brief a fresh Opus builder with the spec, the diff since sign-off, and the feedback, plus the brief items from step 3 (safety, the log, what to return).
+   - **A small, mechanical change** that needs no investigation — a label, a color, a constant, in one file — may go to a fresh Sonnet subagent (`model: "sonnet"`) instead, briefed the same way.
+   - Every brief carries the user's words verbatim and this round's spec change. **A reported bug is reproduced first:** the fixer reproduces it, fixes it, and shows it's gone. If it can't reproduce it, it doesn't guess — it returns what it tried, and you ask the user (plainly, saying what was tried) and end the turn.
+   - Questions the fixer returns go to the user as in step 3.
+3. **Checks.** A fresh Sonnet checker re-runs the How-to-verify bullets the change touches (read from the sign-off commit, as in step 5), plus one check for the feedback itself, written from the user's words ("the repeating row's font size can be changed"). A failure goes back to the fixer — up to three rounds, as in step 5.
+4. **Ready to test** — end the turn with:
+
+```
+Ready to test: <title> — round <n>
+
+What changed: <1–3 lines>
+Try it: <what's running; anything new about how to reach it>
+Checks: <each bullet re-run, and the feedback check: pass / fail / can't verify — why>
+Spec changes this round: <one line, or "none">
+Steps: <this round's checklist, all ticked>
+Next: test it, then tell me what to change, or say "ship" to land it, or "drop" to abandon it. "status?" works any time.
+```
+
+Changes stay uncommitted between rounds; ship reviews and commits them all at once.
 
 ## Ship
 

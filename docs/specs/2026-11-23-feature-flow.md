@@ -26,6 +26,15 @@
 > sign-off step shows "Here's what you get" (final Outcome, strategy, what
 > changed); and only then comes the sign-off question. This replaces the
 > "draft picker with open questions plus sign-off" described below.
+>
+> **Revision 2026-11-24 — feedback rounds are delegated.** In the first real
+> run (flux, printer-font-size) the session reproduced a feedback bug itself
+> with its own Playwright script. The user chose: every feedback round updates
+> the spec first if needed and delegates the work, as the build does — the
+> Opus builder by default, a Sonnet subagent for small mechanical changes; the
+> session never investigates or edits code. A reported bug is reproduced
+> before it's fixed. Each round gets its own checklist, a checker run that
+> includes the feedback itself, and a "Ready to test — round n" message.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree
