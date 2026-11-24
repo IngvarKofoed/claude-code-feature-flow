@@ -5,8 +5,8 @@ Each feature session keeps `feature-flow-state.json` in its worktree's git folde
 (`<repo>/.git/worktrees/<name>/`, next to `feature-flow-progress.log`), so it is never
 tracked and disappears with the worktree at ship or drop.
 
-  state.py set --step NAME [--n N --of TOTAL] [--phase PHASE] [--round R] [--title TITLE]
-               [--spec PATH] [--waiting TEXT] [--worktree PATH]
+  state.py set --step NAME [--n N --of TOTAL] [--phase PHASE] [--round R] [--doing TEXT]
+               [--title TITLE] [--spec PATH] [--waiting TEXT] [--worktree PATH]
       Run inside the feature's worktree, or name it with --worktree (after ExitWorktree).
       Writes the state with a UTC timestamp and this window's session id
       (CLAUDE_CODE_SESSION_ID), and composes the display step, e.g. "Build 5/7 Review and
@@ -84,12 +84,14 @@ def read_branch(git_dir):
         return None
 
 
-def display_step(phase, name, n, total, rnd):
+def phase_label(phase, rnd):
     label = PHASE_LABEL.get(phase, phase.capitalize())
-    if rnd:
-        label = "%s %d:" % (label, rnd)
+    return "%s %d" % (label, rnd) if rnd else label
+
+
+def display_step(phase, name, n, total, rnd):
     count = ("%d/%d " % (n, total)) if (n and total) else ""
-    return "%s %s%s" % (label, count, name)
+    return "%s%s: %s" % (count, phase_label(phase, rnd), name)
 
 
 def cmd_set(a):
@@ -126,6 +128,8 @@ def cmd_set(a):
             "phase": phase,
             "step": display_step(phase, a.step, a.n, a.of, a.round),
             "step_name": a.step,
+            "phase_label": phase_label(phase, a.round),
+            "doing": a.doing or None,
             "step_number": a.n,
             "step_total": a.of,
             "round": a.round,
@@ -247,6 +251,7 @@ def main():
     s.add_argument("--of", type=int, help="how many steps that checklist has")
     s.add_argument("--round", type=int, help="feedback round number")
     s.add_argument("--worktree", help="the feature's worktree, when not running inside it")
+    s.add_argument("--doing", help="what the step is doing, in a few words (the checklist line's detail)")
     s.add_argument("--phase", choices=PHASES)
     s.add_argument("--title")
     s.add_argument("--spec")

@@ -98,6 +98,12 @@
 > (`CLAUDE_CODE_SESSION_ID`). After `ExitWorktree`, ship and drop keep the
 > file current with `--worktree`, and a status line can still find the
 > window's feature by session id from the main checkout.
+>
+> **Revision 2026-11-24 — number first, and what the step is doing.** The
+> step now reads `5/7 Build: Review and commit`, and `set --doing` records
+> the checklist line's detail, so a status line can show
+> `⎇ <name> · <x/N phase: step> · <doing> · <time>`, with the progress log's
+> newest line as "doing" while it is newer than the step.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree
