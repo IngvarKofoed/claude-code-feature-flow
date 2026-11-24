@@ -12,7 +12,7 @@ Check that both are there with `test -f` (normally `test -f ~/.claude/skills/spe
 
 When they say go on, check again.
 
-**Picking up an unfinished design.** When `build.md`'s "Picking up" sends you here (a resumed session found no `Spec: …` commit), you're already in the worktree and the draft exists. Run the check above, read `format.md`, and start at step 5 with the recap. You have no list of the main checkout's ignored files, so when the build reaches its step 2, ask the user to confirm which local files to copy.
+**Picking up an unfinished design.** When `build.md`'s "Picking up" sends you here (a resumed session found no `Spec: …` commit), you're already in the worktree and the draft exists. Run the check above, read `format.md`, and start at step 5 with the recap. You have no list of the main checkout's ignored files, so when the build reaches its step 3, ask the user to confirm which local files to copy.
 
 ## Read-only until sign-off
 
@@ -53,9 +53,9 @@ A real option differs on a load-bearing decision (server- or client-authoritativ
 ## 4. Draft, in the worktree
 
 1. **Read `format.md`.** It sets the spec's path and slug, its length, the template, the worked example and how to call the Implementation strategy. Follow it on this pass and every later one.
-2. **Note the main checkout's local files** while you're still in it: `git ls-files --others --ignored --exclude-standard --directory`. Keep the list for `build.md` step 2; from inside the worktree, git can't reach the main checkout.
+2. **Note the main checkout's local files** while you're still in it: `git ls-files --others --ignored --exclude-standard --directory`. Keep the list for `build.md` step 3; from inside the worktree, git can't reach the main checkout.
 3. **`EnterWorktree`** with `name` set to the slug. Once per feature, never twice. The worktree branches from `origin/main` (unless `worktree.baseRef` is `head`), so it may lack unpushed local `main` commits; the build merges local `main` in later.
-4. **Start the state file**, now that there's a worktree: `python3 <this skill's folder>/state.py set --title "<the spec's title>" --phase design --step "Draft" --doing "drafting the spec" --spec <spec path>` (see `build.md`, "Progress you can see"). The design shows as one step, `Design`; keep its `--step` and `--doing` current: `--step "Markup and questions" --waiting "answer the open questions or mark up the draft"` when you hand the draft over, `--step "Revising" --doing "revising: your answers and markup"` while you integrate, `--step "Sign-off" --waiting "sign off on the spec"` with the sign-off picker, `--step "Review" --doing "fresh-eyes review running"` while it runs after sign-off, with `--waiting "decide the review's findings"` when its decisions come to you.
+4. **Start the state file**, now that there's a worktree: `python3 <this skill's folder>/state.py set --title "<the spec's title>" --phase design --step "Draft" --doing "drafting the spec" --spec <spec path>` (see `build.md`, "Progress you can see"). The design is overall step 1 of ten (`1/10 Design`; see `build.md`, "Progress you can see"); keep its `--step` and `--doing` current: `--step "Markup and questions" --waiting "answer the open questions or mark up the draft"` when you hand the draft over, `--step "Revising" --doing "revising: your answers and markup"` while you integrate, `--step "Sign-off" --waiting "sign off on the spec"` with the sign-off picker, `--step "Review" --doing "fresh-eyes review running"` while it runs after sign-off, with `--waiting "decide the review's findings"` when its decisions come to you.
 5. **Write the spec** at the path `format.md` gives, inside the worktree. Every draft carries Outcome and the Implementation strategy from the start: the user signs off on both, the build is checked against Outcome, and the builder runs on the model the strategy names.
 
 ## 5. Recap and markup
@@ -144,15 +144,15 @@ Never infer sign-off from:
 
 1. **Wait for the review.** If it isn't back, say in one line that it's still running and the build starts once it's back with nothing for you to decide, then end the turn. Its completion notice resumes the work.
 2. **Handle it** per `review.md`'s "Handling the findings".
-3. **No decisions:** apply its fixes and "already decided" notes, then read `build.md` in this skill's folder and follow it from step 1.
+3. **No decisions:** apply its fixes and "already decided" notes, then read `build.md` in this skill's folder and follow it from step 2.
 4. **Decisions:** put them in one picker whose **last** question is *"Then:"* with **Build now (Recommended)** and **Hold**. At most three decisions per picker; more go in an earlier picker, and "Then:" is always the last question of the last one.
-   - **Build now:** integrate the answers, do the quick check that the flagged items are resolved, and build (`build.md` from step 1). No second sign-off: the answers plus Build now are the sign-off on the revised text.
+   - **Build now:** integrate the answers, do the quick check that the flagged items are resolved, and build (`build.md` from step 2). No second sign-off: the answers plus Build now are the sign-off on the revised text.
    - **An answer that brings in something new** (free text beyond the offered options, a "chat about this" that reshapes the design, a new requirement): per `review.md`'s "Settling its decisions", the revised text gets a fresh review before anything is built. Say so in one line, start it, and handle it like the first one. Build now then means "build once it's back with nothing to decide"; its decisions come in a new picker, again ending with "Then:".
-   - **Hold:** integrate the answers and wait. When the user says build, follow `build.md` from step 1.
+   - **Hold:** integrate the answers and wait. When the user says build, follow `build.md` from step 2.
 
 ## 8. After "Sign off, build later"
 
-Handle the review as in step 7: wait for it (if it isn't back, say so in one line and end the turn), apply its fixes and notes, and put any decisions to the user in a picker of up to four, with no "Then:" question; then integrate the answers and do the quick check, or run a fresh review when an answer brought in something new, as in step 7. Then commit the spec as `build.md` step 1 says, and tell the user that saying "build it" in this window starts the build, or `/feature-flow resume <worktree-path>` from a new session in the main checkout. On "build it", follow `build.md` from step 2.
+Handle the review as in step 7: wait for it (if it isn't back, say so in one line and end the turn), apply its fixes and notes, and put any decisions to the user in a picker of up to four, with no "Then:" question; then integrate the answers and do the quick check, or run a fresh review when an answer brought in something new, as in step 7. Then commit the spec as `build.md` step 2 says, and tell the user that saying "build it" in this window starts the build, or `/feature-flow resume <worktree-path>` from a new session in the main checkout. On "build it", follow `build.md` from step 3.
 
 ## No closing offer before the review is handled
 

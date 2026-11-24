@@ -9,9 +9,10 @@ tracked and disappears with the worktree at ship or drop.
                [--title TITLE] [--spec PATH] [--waiting TEXT] [--worktree PATH]
       Run inside the feature's worktree, or name it with --worktree (after ExitWorktree).
       Writes the state with a UTC timestamp and this window's session id
-      (CLAUDE_CODE_SESSION_ID), and composes the display step: "3/7 Building" for the
-      build's seven overall steps, else the phase's name ("Design", "Feedback round 2",
-      "Ship"). --waiting says what the user needs to do; a `set` without it means "working".
+      (CLAUDE_CODE_SESSION_ID), and composes the display step from the feature's ten
+      overall steps: "4/10 Building", "9/10 Feedback round 2", "10/10 Ship". Design,
+      feedback, ship and drop fill in their own number; build and wrapup pass --n.
+      --waiting says what the user needs to do; a `set` without it means "working".
 
   state.py status [--json] [--roots DIR:DIR]
       Lists every feature in flight under the roots (default: ~/work and ~/private,
@@ -89,16 +90,27 @@ def phase_label(phase, rnd):
     return "%s %d" % (label, rnd) if rnd else label
 
 
-def display_step(phase, name, n, total, rnd):
-    """The step as people read it. The build's seven steps (re-run as 4-7 at the wrap-up
-    after feedback) are the overall steps and carry their number, e.g. "3/7 Building";
-    every other phase is one named step: "Design", "Feedback", "Feedback round 2", "Ship",
-    "Drop". Finer detail belongs in `doing`."""
-    if phase in ("build", "wrapup"):
-        return ("%d/%d %s" % (n, total, name)) if (n and total) else name
+# The feature's ten overall steps, the only numbers anyone sees:
+#   1 Design · 2 Spec committed · 3 Copy set up · 4 Building · 5 Validating ·
+#   6 Review and commit · 7 Checks · 8 Ready to test · 9 Feedback · 10 Ship (or Drop)
+# Build and wrap-up name their step (--n required); the other phases are one step each.
+OVERALL_STEPS = 10
+PHASE_STEP = {"design": 1, "feedback": 9, "ship": 10, "drop": 10}
+
+
+def overall_name(phase, name, rnd):
     if phase == "feedback":
         return "Feedback round %d" % rnd if (rnd and rnd > 1) else "Feedback"
+    if phase in ("build", "wrapup"):
+        return name
     return PHASE_LABEL.get(phase, phase.capitalize())
+
+
+def display_step(phase, name, n, total, rnd):
+    """The step as people read it: "4/10 Building", "9/10 Feedback round 2", "10/10 Ship".
+    Finer detail (a design or ship sub-step) belongs in `doing`."""
+    label = overall_name(phase, name, rnd)
+    return ("%d/%d %s" % (n, total, label)) if (n and total) else label
 
 
 def cmd_set(a):
@@ -118,6 +130,12 @@ def cmd_set(a):
         except (OSError, ValueError):
             state = {}
 
+    if a.n is None:
+        a.n = PHASE_STEP.get(a.phase or state.get("phase"))
+    if a.of is None:
+        a.of = OVERALL_STEPS
+    if (a.phase or state.get("phase")) in ("build", "wrapup") and not a.n:
+        sys.exit("state.py set: build and wrapup steps need --n (their overall step number)")
     ts = iso(now_utc())
     was_waiting, waiting_since = state.get("waiting_for_user"), state.get("waiting_since")
     title = a.title or state.get("title")
@@ -254,8 +272,8 @@ def main():
     sub = p.add_subparsers(dest="cmd")
     s = sub.add_parser("set")
     s.add_argument("--step", required=True, help="the step's name, e.g. 'Review and commit'")
-    s.add_argument("--n", type=int, help="the step's number in its phase's checklist")
-    s.add_argument("--of", type=int, help="how many steps that checklist has")
+    s.add_argument("--n", type=int, help="the overall step number (1-10); build and wrapup only")
+    s.add_argument("--of", type=int, help="overall steps (default 10)")
     s.add_argument("--round", type=int, help="feedback round number")
     s.add_argument("--worktree", help="the feature's worktree, when not running inside it")
     s.add_argument("--doing", help="what the step is doing, in a few words (the checklist line's detail)")

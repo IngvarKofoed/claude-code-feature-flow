@@ -110,6 +110,14 @@
 > number (`3/7 Building`), the wrap-up after feedback re-runs them as 4–7
 > under the same numbers, and every other phase is one named step (`Design`,
 > `Feedback`, `Feedback round 2`, `Ship`, `Drop`) with its detail in "doing".
+>
+> **Revision 2026-11-24 — ten overall steps.** The user wanted every step in
+> one count, so the feature has ten overall steps — 1 Design, 2 Spec committed,
+> 3 Copy set up, 4 Building, 5 Validating, 6 Review and commit, 7 Checks,
+> 8 Ready to test, 9 Feedback (rounds named), 10 Ship (or Drop) — and they are
+> the only numbers shown anywhere: `build.md`'s sections are renumbered 2–10 to
+> match, the build checklist prints all ten, and the feedback-round and ship
+> checklists lose their numbers.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree
