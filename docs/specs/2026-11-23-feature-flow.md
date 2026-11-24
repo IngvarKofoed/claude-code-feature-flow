@@ -77,6 +77,12 @@
 > and at ship if anything is uncommitted): what's missing, built differently,
 > or extra. Its findings feed the sync pass. Build steps are now 1 spec
 > commit, 2 setup, 3 build, 4 validate, 5 review and commit, 6 verify, 7 ready.
+>
+> **Revision 2026-11-24 — your-call questions in their own picker.** In use,
+> answering your-call questions in the same picker as "Feedback / Ship /
+> Drop" left the user unsure what to pick when an answer changed the build.
+> Now they come first, alone; all "Keep as built" goes straight on to the
+> usual question, and any other answer starts a feedback round instead.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree

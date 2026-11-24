@@ -62,7 +62,12 @@ The spec ships with the code, so whenever you hand the user something to test, t
 2. **The build is wrong and the spec is right.** Back to the builder to fix (SendMessage), then the pass again on what it returns.
 3. **Your call.** Only when it's important: the build contradicts or changes an Outcome bullet; an Outcome bullet can't be verified as written; the choice goes against something the user said or the spec states and the intent is unclear; or it's hard to undo (saved data, a public contract, deleting something). Meanwhile keep what was built and write it into the spec as it stands, so code and spec agree even if the user never answers. *Example: the "10" is cream, but the spec says "gold is the color for controls" — was the label meant to be gold too?*
 
-**Asking.** Your-call items go to the user with the next ready message, never mid-build (a builder that's blocked asks at once, as step 3 says). Each is a question in the ready picker, ahead of its last question: what's at stake in a sentence, a concrete example, then **Keep as built (Recommended)** first and the real alternatives after it. At most three per picker; more go in an earlier picker. **Keep as built** needs nothing more. Any other answer is feedback: it starts a round (spec first, then the fixer), whatever the picker's last answer was, and you say so in a line. Outcome changes only on the user's answer.
+**Asking.** Your-call items go to the user with the next ready message, never mid-build (a builder that's blocked asks at once, as step 3 says). They get **their own picker**, right after the ready message and before its usual question, so "ship?" is never asked next to a question that might still change the build. Each question gives what's at stake in a sentence and a concrete example, then **Keep as built (Recommended)** first and the real alternatives after it. Up to four per picker; more go in a second one. Then:
+
+- **Every answer is Keep as built:** nothing changes. In the same turn, ask the ready message's usual question (Feedback / Ship / Drop, or Feedback / Done / Drop).
+- **Any other answer:** that's feedback. Say in one line which answer changes the build, start a round with it (spec first, then the fixer), and skip the usual question: the round ends with its own ready message and picker.
+
+Outcome changes only on the user's answer.
 
 **The checklist** shows the pass on the line that ran it, for example `✓ 3 Building: builder on Sonnet; spec: 2 lines added, 1 your call`.
 
@@ -144,7 +149,7 @@ Steps: <the full checklist, all ticked, with any repeats noted>
 "status?" works any time.
 ```
 
-Then ask with AskUserQuestion: any Your-call questions from the sync pass first, then this one last — *"Tried it? Change something, ship, or drop?"*:
+If the sync pass left Your-call items, ask them first, in their own picker ("Keeping the spec in sync", Asking). Then, unless an answer started a round, ask with AskUserQuestion — *"Tried it? Change something, ship, or drop?"*:
 
 - **Feedback** — "Type what to change in Other, or pick this and tell me next."
 - **Ship** — "Lands it on main and pushes."
@@ -190,7 +195,7 @@ Steps: <this round's checklist, all ticked>
 Not reviewed or committed yet. "status?" works any time.
 ```
 
-Then ask with AskUserQuestion: any Your-call questions from the sync pass first, then this one last — *"Tried it? More to change, done, or drop?"*:
+If the sync pass left Your-call items, ask them first, in their own picker, as after the full ready message. Then, unless an answer started a round, ask with AskUserQuestion — *"Tried it? More to change, done, or drop?"*:
 
 - **Feedback** — "Type what to change in Other, or pick this and tell me next."
 - **Done — review and commit** — "Checks all the feedback so far against the spec, reviews and commits it, and re-runs every check; then you try it once more before shipping."
