@@ -70,6 +70,13 @@
 > important calls (Outcome, unclear intent, hard to undo) reach the user, as
 > "Keep as built (Recommended)" questions in the next ready picker. The
 > ready message's "Deviations" line became "Spec issues".
+>
+> **Revision 2026-11-24 — validation before review.** The builder's report is
+> self-reported, so a fresh Sonnet validator now reads the spec next to the
+> diff since sign-off before every code review (after the build, at Done,
+> and at ship if anything is uncommitted): what's missing, built differently,
+> or extra. Its findings feed the sync pass. Build steps are now 1 spec
+> commit, 2 setup, 3 build, 4 validate, 5 review and commit, 6 verify, 7 ready.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree
