@@ -146,7 +146,10 @@
 > mockup subagent published its page but the user never saw it: the subagent's
 > "open" happens where the user can't see it, and the main session reported it
 > as opened without a link. Now the main session itself opens every published
-> mockup (Artifact `open`) and always prints its full link, one line per mockup.
+> mockup and always prints its full link, one line per mockup. Because a
+> claude.ai link showed "Page not found" (most likely the browser signed in to the
+> user's other account), the main session opens the mockup's local HTML copy in
+> the browser and prints both the link and the local path.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree
