@@ -92,17 +92,17 @@ Start a subagent on Opus (`model: "opus"`) and brief it with:
 
 ## 6. Ready message
 
-Leave the app running for the user to try, then end the turn with:
+Leave the app running for the user to try, then end the turn with the message below. **Try it** sits near the end, just above Steps, so the user finds it without scrolling up.
 
 ```
 Ready to test: <title>
 
 What was built: <2–4 lines>
-Try it: <commands, URLs and ports; what's running, and that it's stopped at ship>
 Checks (on <short sha>): <each How-to-verify bullet: pass / fail / can't verify — why>
 Spec changes since sign-off: <summary of `git diff <sign-off> -- <spec-path>`, or "none">
 Deviations: <each with its reason, or "none">
 Review couldn't settle: <or "nothing">
+Try it: <commands, URLs and ports; what's running, and that it's stopped at ship>
 Steps: <the full checklist, all ticked, with any repeats noted>
 Next: tell me what to change, or say "ship" to land it, or "drop" to abandon it. "status?" works any time.
 ```
@@ -134,9 +134,9 @@ Feedback <n>: <a few words>
 Ready to test: <title> — round <n>
 
 What changed: <1–3 lines>
-Try it: <what's running; anything new about how to reach it>
 Checks: <each bullet re-run, and the feedback check: pass / fail / can't verify — why>
 Spec changes this round: <one line, or "none">
+Try it: <what's running and where; anything new about how to reach it>
 Steps: <this round's checklist, all ticked>
 Next: test it, then tell me what to change, or say "ship" to land it, or "drop" to abandon it. "status?" works any time.
 ```
