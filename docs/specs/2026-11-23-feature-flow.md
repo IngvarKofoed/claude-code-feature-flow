@@ -126,6 +126,14 @@
 > git dir, keyed by the window's session id (`state.py set --pending`); the
 > first `set` in the worktree adopts it, and `state.py clear` drops an
 > abandoned one. Status line and `/feature-flow status` read both.
+>
+> **Revision 2026-11-24 — mockups.** When a feature changes what someone
+> sees, the options step offers a mockup (each approach, only the chosen one,
+> or none). It is built by a subagent (Sonnet, or Opus for flows and large
+> design systems) **in the app's real look**: the user chose this over sketches
+> (`lo-fi-prototype` is not used), since a mockup in the existing style is the
+> quickest to read. It is published as a private Artifact, never written to
+> the repo, linked from the spec, and given to the builder as the look to match.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree

@@ -24,6 +24,7 @@ Until the user signs off, the only side effects are `EnterWorktree` (step 4) and
 
 - Reading is fine: Read, Grep, Glob, `git log` / `blame` / `diff`, `ls`, `cat`, and any other read-only command (`date`, package inspection, a fetch).
 - Creating and editing the spec file, and the folder it goes in, is fine.
+- A mockup the user asked for ("Mockups", below): its subagent works in a scratch folder outside the repo and publishes a private Artifact page. Nothing of it lands in the repo.
 - Nothing else: no source code, config, tests or scratch files, and no command with side effects (installs, commits, generators, migrations).
 
 If a question can only be answered by trying something, put it in the spec's Open questions and let the user run it. Don't break the rule to "just check".
@@ -53,6 +54,24 @@ Before writing anything, present 2–3 real approaches in chat. Each gets:
 Then your recommendation, with the reason. Ask which to take, and **wait**: the user may pick one, mix them, or send you back for others. Don't draft until they've chosen.
 
 A real option differs on a load-bearing decision (server- or client-authoritative, one table or two), not on naming or syntax. If the honest options share 90% of the design, or there's only one reasonable approach, say so plainly, justify it in a sentence or two, and confirm before drafting. Never pad the list with a weak alternative.
+
+**When the feature changes what someone sees,** offer a mockup with the options, in the same turn: one AskUserQuestion, *"Mock it up in the app's own style?"*, with **Each approach** (Recommended when the approaches differ in what the user sees), **Only the one I choose** (Recommended when they don't), and **No mockup**. Say in the question which screen it would show. Never offer it for work nobody sees (a refactor, a backend fix).
+
+- **Each approach:** start one mockup subagent per approach ("Mockups", below), say in one line that they're running, and end the turn; when they're back, give the links and ask which approach to take.
+- **Only the one I choose:** wait for the choice, then start the mockup in the background and go on to the draft; it doesn't wait for it.
+
+## Mockups
+
+A mockup shows the changed screen **in the app's real look**, never a sketch or a wireframe: the user knows the existing UI, so a mockup in the same style is the quickest to read. The user may also ask for one at any point in the design; same rules.
+
+- **Delegated, in the background.** Start a subagent, on **Sonnet** (`model: "sonnet"`) by default, or **Opus** (`model: "opus"`) when the screen has several states or a flow, or must match a large design system closely. Never build it in this session: it's long HTML and CSS work that would fill the conversation. Set the state file's `--doing` to "mockup: <what>" while it runs.
+- **Its brief:** the screen(s) it shows and what changes on them (the approach, or the chosen design); the repo path; and to build it from the app's own UI, reading only:
+  - the components, stylesheets and design tokens behind those screens, plus any design-system skill the project's `CLAUDE.md` names (the FOSS design system in the work repos);
+  - with the app's real class names, colors, spacing and fonts carried into one self-contained page, and real content (real names, plausible values), not lorem ipsum.
+
+  It may look at the app if it's already running, but never starts, installs or changes anything in the repo, and works in its own scratch folder. It publishes the page as a private Artifact (following the Artifact tool's rules), with a visible "Mockup" label and a title naming the screen, and returns the link and a line on what it shows.
+- **Feedback on it** goes to the same subagent (SendMessage), which republishes to the same link.
+- **Into the spec:** the chosen design's mockup link goes in Design ("Mockup: <link>, the look to match"); a rejected approach's link goes beside it in Alternatives considered. A mockup that's still running when the spec reaches sign-off is waited for, since the user signs what they can see: say so in one line.
 
 ## 4. Draft, in the worktree
 

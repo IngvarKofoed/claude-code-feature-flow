@@ -111,6 +111,7 @@ Start the builder subagent and brief it with:
 - the spec path, the worktree path, and the sign-off commit;
 - the spec's **Implementation strategy** — if it says multi-agent, the builder leads and delegates the chunks it names to its own subagents, on the models it names;
 - the project `CLAUDE.md`'s rules, including the changelog entry it requires;
+- if the spec links a **mockup**, that it's the look to match: read it with the Artifact tool's `read` action, or say so if it can't, and you pass on what it shows;
 - **spec issues:** a text bug with one obvious fix (a typo, two sections that disagree where one is clearly meant, a stale name) gets fixed in the spec and listed; anything with more than one plausible build is **not guessed** — it stops and returns the question, with what each option would build. Outcome is never edited;
 - the safety rules above, and that it doesn't commit, push or touch the main checkout;
 - the progress log path, and that it and every helper it starts append a line per milestone (see "Progress you can see"), with `builder` or `builder/<chunk>` as `<who>`;
