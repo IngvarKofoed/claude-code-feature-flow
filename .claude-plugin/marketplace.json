@@ -1,0 +1,15 @@
+{
+  "name": "claude-code-feature-flow",
+  "description": "The feature-flow status line plugin (the feature-flow skill itself installs as a skill).",
+  "owner": {
+    "name": "Martin Ingvar Kofoed Jensen"
+  },
+  "plugins": [
+    {
+      "name": "feature-flow",
+      "source": "./plugin",
+      "description": "Status line for the feature-flow skill: this window's feature, its step (x/10), what it's doing, and time spent.",
+      "version": "0.1.0"
+    }
+  ]
+}

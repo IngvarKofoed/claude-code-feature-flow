@@ -134,6 +134,13 @@
 > (`lo-fi-prototype` is not used), since a mockup in the existing style is the
 > quickest to read. It is published as a private Artifact, never written to
 > the repo, linked from the spec, and given to the builder as the look to match.
+>
+> **Revision 2026-11-24 — its own status line plugin.** The step was first
+> drawn by Cockpit's status line, which coupled the two; the user wanted them
+> fully separate. This repo now also holds a plugin (`plugin/`, installed from
+> its own marketplace) whose hooks module pins the window's feature as the
+> plugin's own status line with `$.ui.status`, independent of the
+> `statusLine` setting. It only reads the state file; Cockpit is unchanged.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree
