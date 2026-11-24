@@ -9,9 +9,9 @@ tracked and disappears with the worktree at ship or drop.
                [--title TITLE] [--spec PATH] [--waiting TEXT] [--worktree PATH]
       Run inside the feature's worktree, or name it with --worktree (after ExitWorktree).
       Writes the state with a UTC timestamp and this window's session id
-      (CLAUDE_CODE_SESSION_ID), and composes the display step, e.g. "Build 5/7 Review and
-      commit" or "Feedback 2: 2/4 Fixing". --waiting says what the user needs to do; a
-      `set` without it means "working".
+      (CLAUDE_CODE_SESSION_ID), and composes the display step: "3/7 Building" for the
+      build's seven overall steps, else the phase's name ("Design", "Feedback round 2",
+      "Ship"). --waiting says what the user needs to do; a `set` without it means "working".
 
   state.py status [--json] [--roots DIR:DIR]
       Lists every feature in flight under the roots (default: ~/work and ~/private,
@@ -90,8 +90,15 @@ def phase_label(phase, rnd):
 
 
 def display_step(phase, name, n, total, rnd):
-    count = ("%d/%d " % (n, total)) if (n and total) else ""
-    return "%s%s: %s" % (count, phase_label(phase, rnd), name)
+    """The step as people read it. The build's seven steps (re-run as 4-7 at the wrap-up
+    after feedback) are the overall steps and carry their number, e.g. "3/7 Building";
+    every other phase is one named step: "Design", "Feedback", "Feedback round 2", "Ship",
+    "Drop". Finer detail belongs in `doing`."""
+    if phase in ("build", "wrapup"):
+        return ("%d/%d %s" % (n, total, name)) if (n and total) else name
+    if phase == "feedback":
+        return "Feedback round %d" % rnd if (rnd and rnd > 1) else "Feedback"
+    return PHASE_LABEL.get(phase, phase.capitalize())
 
 
 def cmd_set(a):

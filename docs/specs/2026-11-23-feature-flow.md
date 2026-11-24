@@ -104,6 +104,12 @@
 > the checklist line's detail, so a status line can show
 > `⎇ <name> · <x/N phase: step> · <doing> · <time>`, with the progress log's
 > newest line as "doing" while it is newer than the step.
+>
+> **Revision 2026-11-24 — overall steps only.** Per-phase sub-step counts
+> ("2/4 Feedback 2: Fixing") read badly. Only the build's seven steps carry a
+> number (`3/7 Building`), the wrap-up after feedback re-runs them as 4–7
+> under the same numbers, and every other phase is one named step (`Design`,
+> `Feedback`, `Feedback round 2`, `Ship`, `Drop`) with its detail in "doing".
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree

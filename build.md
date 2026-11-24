@@ -30,10 +30,17 @@ Then, every time a step starts or finishes, print just that one line with its ne
 Append one line per milestone — `printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "<who>: <what>" >> <log>`, a UTC timestamp other agents can read — where `<who>` is `session`, `builder`, `builder/<chunk>` or `checker`. You log each checklist change; the builder and every helper it starts log their own milestones (a chunk part done, a spec fix, a question they're stopping on, a process started or stopped). Put the log path and this rule in every brief.
 
 **The state file.** One JSON file per feature, next to the log (`feature-flow-state.json`), so the user — or any agent — can see every feature at once with `/feature-flow status`, and each window's status line can show its own feature's step. You write it with this skill's script:
-`python3 <this skill's folder>/state.py set --phase <phase> --n <step number> --of <steps in that checklist> --step "<step name>" [--round <n>] [--doing "<the checklist line's detail>"] [--waiting "<what the user needs to do>"]`
-It stamps the time and this window's session id, and shows the step as, for example, `5/7 Build: Review and commit`. `--doing` is the few words of detail you print on the checklist line (`builder on Sonnet, 2 chunks`); a status line shows the log's newest line instead while there is one, so the builder's own milestones show as they happen.
-- **Every checklist line you print** is also a `set`, with its number, its checklist's length and its name: the build (`--phase build --n 5 --of 7 --step "Review and commit"`), a feedback round (`--phase feedback --round 2 --n 2 --of 4 --step "Fixing"`), the wrap-up after Done (`--phase wrapup --n 1 --of 4 --step "Validate"`), ship (`--phase ship --n 3 --of 7 --step "Checks"`) and drop (`--phase drop`, its five steps).
+`python3 <this skill's folder>/state.py set --phase <phase> --step "<step name>" [--n <number> --of 7] [--round <n>] [--doing "<a few words>"] [--waiting "<what the user needs to do>"]`
+It stamps the time and this window's session id. **The build's seven steps are the overall steps**: they carry their number (`3/7 Building`), and so does the wrap-up after feedback, which re-runs steps 4–7. Every other phase shows as one named step (`Design`, `Feedback`, `Feedback round 2`, `Ship`, `Drop`), and its finer detail goes in `--doing`.
+- **Every checklist line you print** is also a `set`:
+  - build: `--phase build --n 3 --of 7 --step "Building" --doing "builder on Sonnet, 2 chunks"`;
+  - wrap-up: `--phase wrapup --n 5 --of 7 --step "Review and commit" --doing "after feedback"`;
+  - a feedback round: `--phase feedback --round 2 --step "Fixing" --doing "fixing: <what>"`;
+  - ship and drop: `--phase ship --step "Push" --doing "pushing to origin"`.
+
+  In feedback, ship and drop, start `--doing` with the sub-step ("checks: 2 of 3 pass").
 - **Every turn you end for the user** is a `set --waiting` saying what they need to do, in a few words ("try it, then ship, feedback or drop", "answer the builder's question", "decide 2 your-call items"); a status line shows it as "your turn: …". The next `set` without `--waiting` means you're working again.
+- **`--doing`** is the checklist line's few words of detail. A status line shows the log's newest line instead while it's newer than the step, so the builder's own milestones show as they happen.
 - **After `ExitWorktree`** (ship and drop), keep going: add `--worktree <worktree path>` so the script finds the file from the main checkout. The status line follows this window there by its session id. The file goes with the worktree when it's removed.
 - Subagents don't write it; the log is theirs.
 
@@ -213,7 +220,7 @@ If the sync pass left Your-call items, ask them first, in their own picker, as a
 
 ### Done with feedback
 
-When the user picks **Done** (or says "done", "that's it"), print `Wrap-up: <title>` with `· 1 Validate`, `· 2 Review and commit`, `· 3 Checks`, `· 4 Ready to test`, and tick it as usual:
+When the user picks **Done** (or says "done", "that's it"), the build's steps 4–7 run again, under their build numbers: print `Wrap-up: <title>` with `· 4 Validating against the spec`, `· 5 Review and commit`, `· 6 Checks`, `· 7 Ready to test`, and tick it as usual:
 
 1. **Validate** — step 4, on everything since sign-off, then the sync pass.
 2. **Review and commit** — step 5 on the uncommitted diff: `/code-review high --fix` plus any project gate (and the sync pass if its fixes change behavior the spec describes), a commit in the repo's style naming the feature and the feedback, ending with the `Reviewed: /code-review high --fix` line, then fetch and merge `origin/main` and `main`.
