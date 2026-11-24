@@ -37,7 +37,9 @@ for p in "$@"; do
   if [ ! -e "$src" ]; then
     echo "skip (missing in main checkout): $p" >&2; continue
   fi
-  if git -C "$main" ls-files --error-unmatch -- "$p" >/dev/null 2>&1; then
+  # Tracked status is the same in every worktree of the repo; ask the
+  # worktree's own git, so nothing here runs git against the main checkout.
+  if git -C "$wt" ls-files --error-unmatch -- "$p" >/dev/null 2>&1; then
     echo "skip (tracked by git): $p" >&2; continue
   fi
   if [ -e "$dst" ]; then

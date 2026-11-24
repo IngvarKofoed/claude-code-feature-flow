@@ -1,5 +1,22 @@
 # Feature flow: one session per spec, a background builder per build
 
+> **Revision 2026-11-24 — one session per feature.** After the trial the
+> user chose: *"A session for me is one feature, one window where I do the
+> chatting"*; agents starting other agents are fine, extra sessions are not.
+> So there is **no background builder**: after "Sign off and implement" the
+> design session itself builds, delegating the code to an Opus subagent (which
+> may start its own), the checks to a Sonnet subagent, and the review to
+> `/code-review`. Feedback, ship and drop happen in the same window. This
+> drops the `claude --bg` launch, `claude attach`, the `ff-` session names,
+> the tidy-up of finished builders, and the "start in the main checkout"
+> trust workaround below. A new `/feature-flow resume <worktree-path>` picks
+> a feature up when its session is gone. Everything else in this spec — the
+> worktree per feature, the sign-off pickers, the spec commit as sign-off,
+> setup from the main checkout, verify last, the ship and drop steps — still
+> holds. Where the text below says "builder session", read "the same session,
+> through its Opus builder subagent". `SKILL.md` and `build.md` are the
+> current truth.
+
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree
 of its own. Clicking **Sign off and implement** hands the spec to a background
