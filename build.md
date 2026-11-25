@@ -168,7 +168,7 @@ Steps: <the full checklist, all ticked, with any repeats noted>
 "status?" works any time.
 ```
 
-If the sync pass left Your-call items, ask them first, in their own picker ("Keeping the spec in sync", Asking). Then, unless an answer started a round, ask with AskUserQuestion — *"Tried it? Change something, ship, or drop?"*:
+If the sync pass left Your-call items, ask them first, in their own picker ("Keeping the spec in sync", Asking). Then, unless an answer started a round, ask with AskUserQuestion — *"Tried it? Change something, ship, or drop?"* — with exactly these options, in this order (Feedback first, so a stray Enter only asks what to change), and no `(Recommended)` tag, since only the user knows how the test went:
 
 - **Feedback** — "Type what to change in Other, or pick this and tell me next."
 - **Ship** — "Lands it on main and pushes."
@@ -214,7 +214,7 @@ Steps: <this round's checklist, all ticked>
 Not reviewed or committed yet. "status?" works any time.
 ```
 
-If the sync pass left Your-call items, ask them first, in their own picker, as after the full ready message. Then, unless an answer started a round, ask with AskUserQuestion — *"Tried it? More to change, done, or drop?"*:
+If the sync pass left Your-call items, ask them first, in their own picker, as after the full ready message. Then, unless an answer started a round, ask with AskUserQuestion — *"Tried it? More to change, done, or drop?"* — with exactly these options, in this order, and no `(Recommended)` tag, as above:
 
 - **Feedback** — "Type what to change in Other, or pick this and tell me next."
 - **Done — review and commit** — "Checks all the feedback so far against the spec, reviews and commits it, and re-runs every check; then you try it once more before shipping."
