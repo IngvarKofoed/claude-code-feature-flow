@@ -63,7 +63,7 @@ It stamps the time and this window's session id, and shows the step by its overa
 - **Never kill a process you didn't start.** Keep a list of what you and your subagents start (dev servers, simulators, watchers) with how to stop each, and stop only those.
 - **Never commit, stash, reset, check out, clean or discard anything in the main checkout.** The only things done there are, at ship, `merge --ff-only <branch>` while it is on `main` and `push origin main`; and at ship or drop, `worktree remove` of this worktree and deleting its branch. If the main checkout blocks you, tell the user and wait.
 - **Stay in this worktree.** Copy from the main checkout; never move or edit what's there.
-- **Never edit the spec's Outcome section.** If Outcome itself is wrong — a check that can't work, a promise the design can't keep — that's a decision for the user.
+- **Subagents never edit the spec's Outcome section.** Only you change it, in the sync pass, and every change to it is shown to the user in the next ready message.
 - **Subagents wait for their own helpers.** A subagent that starts helpers must collect their results before it reports back; say so in its brief.
 
 **Questions to the user** say what the choice changes and, when it's not obvious, show a short concrete example. Option labels stand on their own.
@@ -74,20 +74,20 @@ The spec ships with the code, so whenever you hand the user something to test, t
 
 **In sync means** nothing in the spec is false about the build, and every choice the builder made where the spec was silent, and that a user or a later reader would notice (behavior, look, data, an interface), has a line in the spec: in Design, or in Key decisions if it's load-bearing. Internal details such as names, structure and how it's done stay out; the spec isn't the implementation.
 
-**The signed spec wins.** The user signed the spec, not the build, so a gap between them is fixed in the code unless the spec was silent or plainly mistaken. Never resolve a difference from something the user decided (a Key decision, the Design, an Outcome bullet) by rewriting the spec to match the code: that's a code fix, or the user's call. When you announce the pass, say both directions, e.g. "I'll send what's missing or different back to the builder, and write its choices into the spec where the spec was silent."
+**Spec or code: decide each one.** For every difference between spec and build, look at both sides and decide which one is off; there's no default, and either can be right (in practice it's often the spec). The outcome is always one of two: **the spec changes** or **the code changes**. Ask the user only when you really can't tell, which should be rare. When you announce the pass, say both directions, e.g. "I'll check each difference and either update the spec or send it back to the builder."
 
-**The sync pass** runs whenever a builder or fixer returns (after step 5's validation, when one runs), and again if the code review's fixes change behavior the spec describes. Its input is what the builder returned (the spec fixes it made, every place it chose where the spec was silent or unclear, every deviation), the validator's findings, and what the review couldn't settle. Take the items that matter: anything that blocked, forced a deviation, needed a choice between readings that build different things, shows the spec contradicting itself or the code, or leaves an Outcome bullet unverifiable, and every silent choice a user would notice. Leave out wording, typos, and details filled the obvious way with no real risk. Sort each into one of three:
+**The sync pass** runs whenever a builder or fixer returns (after step 5's validation, when one runs), and again if the code review's fixes change behavior the spec describes. Its input is what the builder returned (the spec fixes it made, every place it chose where the spec was silent or unclear, every deviation), the validator's findings, and what the review couldn't settle. Take the items that matter: anything that blocked, forced a deviation, needed a choice between readings that build different things, shows the spec contradicting itself or the code, or leaves an Outcome bullet unverifiable, and every silent choice a user would notice. Leave out wording, typos, and details filled the obvious way with no real risk. Decide each one:
 
-1. **The spec was silent, and the build's choice is sensible.** Write the choice into the spec so it reads true, and list it. Most items land here. The same goes for a plain factual slip in the spec (a file or function that doesn't exist under that name, two sections that disagree where one is clearly meant). *Example: the "10" on the ten planks is 16 px, because 13 px read too small next to the icon — one line in Design.*
-2. **The build differs from what the spec says.** Back to the builder to fix the code (SendMessage), then the pass again on what it returns. This is the default for anything the validator calls *missing* or *different*.
-3. **Your call.** Only when it's important: the build contradicts or changes an Outcome bullet; an Outcome bullet can't be verified as written; the choice goes against something the user said or the spec states and the intent is unclear; or it's hard to undo (saved data, a public contract, deleting something). Meanwhile keep what was built and write it into the spec as it stands, so code and spec agree even if the user never answers. *Example: the "10" is cream, but the spec says "gold is the color for controls" — was the label meant to be gold too?*
+1. **The spec changes** when the spec is what's off: it was silent, vague, or mistaken about the code, or the build's way is what the design actually meant. Write it into the spec so it reads true, Outcome included: an Outcome bullet that's wrong or can't be verified as written gets rewritten. *Example: the "10" on the ten planks is 16 px, because 13 px read too small next to the icon — one line in Design.*
+2. **The code changes** when the code is what's off: it misses something the spec asks for, or does it differently for no reason the spec would accept. Back to the builder to fix it (SendMessage), then the pass again on what it returns.
+3. **Your call**, rarely: only when you really can't tell which side is off — both readings are reasonable, the choice changes what the user sees, and nothing in the spec or the code tips it. Meanwhile keep what was built and write it into the spec as it stands, so code and spec agree even if the user never answers. *Example: the "10" is cream, but the spec says "gold is the color for controls" — was the label meant to be gold too?*
+
+Every decision, either way, is listed in the next ready message with a short reason, so the user sees each call and can overrule one as feedback.
 
 **Asking.** Your-call items go to the user with the next ready message, never mid-build (a builder that's blocked asks at once, as step 4 says). They get **their own picker**, right after the ready message and before its usual question, so "ship?" is never asked next to a question that might still change the build. Each question gives what's at stake in a sentence and a concrete example, then **Keep as built (Recommended)** first and the real alternatives after it. Up to four per picker; more go in a second one. Then:
 
 - **Every answer is Keep as built:** nothing changes. In the same turn, ask the ready message's usual question (Feedback / Ship / Drop, or Feedback / Done / Drop).
 - **Any other answer:** that's feedback. Say in one line which answer changes the build, start a round with it (spec first, then the fixer), and skip the usual question: the round ends with its own ready message and picker.
-
-Outcome changes only on the user's answer.
 
 **The checklist** shows the pass on the line that ran it, for example `✓ 4 Building: builder on Sonnet; spec: 2 lines added, 1 your call`.
 
@@ -114,7 +114,7 @@ Start the builder subagent and brief it with:
 - the spec's **Implementation strategy** — if it says multi-agent, the builder leads and delegates the chunks it names to its own subagents, on the models it names;
 - the project `CLAUDE.md`'s rules, including the changelog entry it requires;
 - if the spec links a **mockup**, that it's the look to match: read it with the Artifact tool's `read` action, or say so if it can't, and you pass on what it shows;
-- **spec issues:** a text bug with one obvious fix (a typo, two sections that disagree where one is clearly meant, a stale name) gets fixed in the spec and listed; anything with more than one plausible build is **not guessed** — it stops and returns the question, with what each option would build. Outcome is never edited;
+- **spec issues:** a text bug with one obvious fix (a typo, two sections that disagree where one is clearly meant, a stale name) gets fixed in the spec and listed; anything with more than one plausible build is **not guessed** — it stops and returns the question, with what each option would build. The builder never edits Outcome;
 - the safety rules above, and that it doesn't commit, push or touch the main checkout;
 - the progress log path, and that it and every helper it starts append a line per milestone (see "Progress you can see"), with `builder` or `builder/<chunk>` as `<who>`;
 - what to return: what was built; the spec fixes made; every place the spec was silent or unclear, what it chose and why; the deviations (each tracing to a spec problem, or reverted as scope creep); anything still open; and what it started that is still running.
@@ -135,7 +135,7 @@ Brief it with: the spec path (the working copy, with the fixes and answers made 
 
 It also lists the choices it sees where the spec is silent and a user would notice the result. If it finds nothing, it says so in one line; an empty reply counts as a failed check, so run it again once.
 
-Its findings go into the sync pass with the builder's report. Missing and different work goes back to the builder to fix the code (the signed spec wins, as "Keeping the spec in sync" says); extra work is reverted as scope creep unless the build needs it, and then the spec gets a line. When the builder has fixed what was sent back, have the same validator (SendMessage) re-check just those items, not the whole build. Print the result on the checklist line, for example `✓ 5 Validating: 1 missing (fixed), 2 silent choices written into the spec`.
+Its findings go into the sync pass with the builder's report. Each missing or different item is decided there: the spec changes or the code changes; extra work is reverted as scope creep unless the build needs it, and then the spec gets a line. When the builder has fixed what was sent back, have the same validator (SendMessage) re-check just those items, not the whole build. Print the result on the checklist line, for example `✓ 5 Validating: 1 missing (fixed), 2 silent choices written into the spec`.
 
 ## 6. Review and commit
 
@@ -147,9 +147,9 @@ Its findings go into the sync pass with the builder's report. Missing and differ
 ## 7. Verify — last
 
 - Start what the checks need (the app, on your ports) and add it to the list of started processes.
-- Give a **fresh subagent on Sonnet** (`model: "sonnet"`) the Outcome section from the sign-off commit — `git show <sign-off>:<spec-path>`, not the working copy — the worktree path, and how to reach what's running. It runs each **How to verify** bullet and reports **pass**, **fail**, or **can't verify** with the reason and the evidence. It changes no files (except appending a `checker:` line per bullet to the progress log) and stops anything it starts itself.
+- Give a **fresh subagent on Sonnet** (`model: "sonnet"`) the Outcome section from the spec as it stands now (the sync pass may have corrected a bullet since sign-off; the ready message shows that change) — the worktree path, and how to reach what's running. It runs each **How to verify** bullet and reports **pass**, **fail**, or **can't verify** with the reason and the evidence. It changes no files (except appending a `checker:` line per bullet to the progress log) and stops anything it starts itself.
 - A failure: have the builder fix it (SendMessage), review the fix, commit, and check again. After three rounds on the same bullet, stop and report it as failing.
-- A **can't verify** caused by the bullet's wording rather than the build is a Your-call item ("Keeping the spec in sync"): Outcome changes only on the user's answer.
+- A **can't verify** caused by the bullet's wording rather than the build goes to the sync pass: rewrite the bullet so it can be checked, and check it again.
 - Note the commit the checks ran on.
 
 ## 8. Ready message
@@ -162,8 +162,8 @@ Ready to test: <title>
 What was built: <2–4 lines>
 Feedback folded in: <each round since the build, in a few words — leave the line out before any feedback>
 Checks (on <short sha>): <each How-to-verify bullet: pass / fail / can't verify — why>
-Spec changes since sign-off: <summary of `git diff <sign-off> -- <spec-path>`, or "none">
-Spec issues: <each item from the sync pass and what was done: written into the spec / fixed in the code / your call below — or "none">
+Spec changes since sign-off: <one line each, from `git diff <sign-off> -- <spec-path>`: what changed and why; Outcome changes first, marked "Outcome:" with old → new — or "none">
+Fixed in the code to match the spec: <one line each, with why — or "none">
 Not settled: <what's left that isn't a spec issue, e.g. untested on a real phone — or "nothing">
 Try it: <commands, URLs and ports; what's running, and that it's stopped at ship>
 Steps: <the full checklist, all ticked, with any repeats noted>
@@ -194,7 +194,7 @@ Feedback round <n>: <a few words>
 · Ready to test
 ```
 
-1. **Spec first.** If the feedback changes behavior the spec describes, or adds some, update the spec before briefing anyone (Design, Key decisions, Goals) so the fixer works from it, and say in one line what changed; otherwise tick the step "no change". Outcome stays as signed: if the feedback contradicts an Outcome bullet, say which and ask before going on.
+1. **Spec first.** If the feedback changes behavior the spec describes, or adds some, update the spec before briefing anyone (Design, Key decisions, Goals) so the fixer works from it, and say in one line what changed; otherwise tick the step "no change". If it contradicts an Outcome bullet, update the bullet to match the feedback and say so; the round's ready message lists it under "Outcome:".
 2. **Fixing — delegated.**
    - **Default: the builder** (SendMessage), which already knows the code. If it can't be resumed, brief a fresh builder on the same model with the spec, the diff since sign-off, and the feedback, plus the brief items from step 4 (safety, the log, what to return).
    - **A small, mechanical change** that needs no investigation — a label, a color, a constant, in one file — may go to a fresh Sonnet subagent (`model: "sonnet"`) instead, briefed the same way.
@@ -209,8 +209,8 @@ Ready to test: <title> — round <n>
 
 What changed: <1–3 lines>
 Checks: <each bullet re-run, and the feedback check: pass / fail / can't verify — why>
-Spec changes this round: <the feedback's spec change and what the sync pass wrote in, or "none">
-Spec issues: <each sync-pass item and what was done, or "none">
+Spec changes this round: <one line each: the feedback's change and the sync pass's; Outcome changes first, marked "Outcome:" with old → new — or "none">
+Fixed in the code to match the spec: <one line each, or "none">
 Try it: <what's running and where; anything new about how to reach it>
 Steps: <this round's checklist, all ticked>
 Not reviewed or committed yet. "status?" works any time.

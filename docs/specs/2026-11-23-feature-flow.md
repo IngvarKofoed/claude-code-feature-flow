@@ -156,11 +156,15 @@
 > now / Hold; "build it"; 4/10 Building) said "build". The user chose "build":
 > the option is now **Sign off and build**. Read the text below accordingly.
 >
-> **Revision 2026-11-25 — the signed spec wins.** A session described the sync
-> pass as "update the spec to match the build". The rule is now explicit: a gap
-> between spec and build is fixed in the code unless the spec was silent or
-> plainly mistaken, and a deviation from something the user decided is never
-> fixed by rewriting the spec (code fix, or the user's call).
+> **Revision 2026-11-25 — spec or code, decided per case.** For each gap
+> between spec and build the main session decides which side is off: the spec
+> changes or the code changes, with no default (in the user's experience it is
+> often the spec); the user is asked only when the session really can't tell.
+> Outcome bullets follow the same rule (the user chose this, on condition that
+> every spec change is shown at test time): the ready message lists each spec
+> change since sign-off, Outcome changes first as old → new, and each code fix
+> made to match the spec. The checker checks the current Outcome. This replaces
+> a same-day "the signed spec wins" rule that defaulted to fixing the code.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree
