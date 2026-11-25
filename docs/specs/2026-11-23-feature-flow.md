@@ -155,6 +155,12 @@
 > only place saying "implement"; everything else (Sign off, build later; Build
 > now / Hold; "build it"; 4/10 Building) said "build". The user chose "build":
 > the option is now **Sign off and build**. Read the text below accordingly.
+>
+> **Revision 2026-11-25 — the signed spec wins.** A session described the sync
+> pass as "update the spec to match the build". The rule is now explicit: a gap
+> between spec and build is fixed in the code unless the spec was silent or
+> plainly mistaken, and a deviation from something the user decided is never
+> fixed by rewriting the spec (code fix, or the user's call).
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree
