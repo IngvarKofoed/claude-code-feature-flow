@@ -146,7 +146,7 @@ Sign-off is explicit, or it hasn't happened. When the spec is ready (every quest
 
 Then ask, in one AskUserQuestion, *"Do you sign off on this spec?"* with exactly these options, in this order:
 
-- **Sign off and implement (Recommended)**: "Builds it here once the fresh-eyes review is back with nothing for you to decide."
+- **Sign off and build (Recommended)**: "Builds it here once the fresh-eyes review is back with nothing for you to decide."
 - **Sign off, build later**: "Commits the spec once the review is handled; you start the build when you want."
 - **Not yet — more changes**: "Mark the file up with `////`, or type what to change in Other."
 
@@ -168,7 +168,7 @@ Never infer sign-off from:
 
 **Not yet** goes back to step 5's revising pass: with what they typed, or once they've marked the file up (if they gave nothing, ask in one line what should change). Then on to this step again.
 
-## 7. After "Sign off and implement"
+## 7. After "Sign off and build"
 
 1. **Wait for the review.** If it isn't back, say in one line that it's still running and the build starts once it's back with nothing for you to decide, then end the turn. Its completion notice resumes the work.
 2. **Handle it** per `review.md`'s "Handling the findings".

@@ -53,7 +53,7 @@ It stamps the time and this window's session id, and shows the step by its overa
 
 **Your authority.**
 
-- "Sign off and implement" is the user's request to commit on this worktree's branch. Commit when these steps say to, without asking.
+- "Sign off and build" is the user's request to commit on this worktree's branch. Commit when these steps say to, without asking.
 - Your `/code-review high --fix` is the answer to the project `CLAUDE.md`'s review-before-commit question. Don't ask it. Any *other* gate the project's `CLAUDE.md` sets still runs — flux, for example, requires a design pass on UI diffs; do it alongside the review.
 - **ship** (also "ship it", "land it") is the user's request to land on `main` and push. Nothing else is.
 - These worktree and landing rules win over any worktree section still in the project's `CLAUDE.md` (its own branch names, landing steps, keep-or-remove questions). Everything else in `CLAUDE.md` applies as usual, including the changelog entry and its required reading.

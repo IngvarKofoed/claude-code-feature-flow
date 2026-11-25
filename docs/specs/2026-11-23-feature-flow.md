@@ -150,6 +150,11 @@
 > claude.ai link showed "Page not found" (most likely the browser signed in to the
 > user's other account), the main session opens the mockup's local HTML copy in
 > the browser and prints both the link and the local path.
+>
+> **Revision 2026-11-25 — one word: build.** "Sign off and implement" was the
+> only place saying "implement"; everything else (Sign off, build later; Build
+> now / Hold; "build it"; 4/10 Building) said "build". The user chose "build":
+> the option is now **Sign off and build**. Read the text below accordingly.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree

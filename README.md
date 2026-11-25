@@ -3,7 +3,7 @@
 A [Claude Code](https://docs.claude.com/en/docs/claude-code) skill that takes one feature from spec to `main` in **one session, in one window** — with you involved only where you're needed.
 
 1. **Design.** `/feature-flow <topic>` designs the spec with you (for screens, with an optional mockup in your app's own style, built by a subagent): a few approaches to pick from, then a draft you mark up, with open questions as clicks. The spec is written in a git worktree of its own, so several features can be in flight at once, one window each. What a spec contains and how its review runs come from the shared [`spec-format`](https://github.com/IngvarKofoed/claude-code-spec-format) files.
-2. **Sign off and implement.** The fresh-eyes review runs while you read. If it finds nothing for you to decide, the same session starts building.
+2. **Sign off and build.** The fresh-eyes review runs while you read. If it finds nothing for you to decide, the same session starts building.
 3. **Build.** The session hands the coding to a subagent on the model the spec's strategy chose (which may start its own helpers), copies your git-ignored local files (`.env`, local databases) into the worktree, reinstalls dependencies, keeps the spec in sync with what it builds (writing its choices into the spec) and asks you only the important calls. A fresh Sonnet validator compares the code with the spec (missing, different, extra), then it reviews with `/code-review high --fix`, merges `main`, has a Sonnet checker run the spec's Outcome checks, and tells you it's ready to test.
 4. **Test.** Try it, then pick **Feedback**, **Ship** or **Drop**. Feedback rounds are quick and stay uncommitted; when you pick **Done**, it reviews and commits them all, re-checks, and you try it once more before **Ship**.
 5. **Ship.** Pick **Ship**: it lands on `main` by fast-forward, pushes, and removes the worktree and branch. Or pick **Drop** to abandon it.
@@ -41,7 +41,7 @@ git clone git@github.com:IngvarKofoed/claude-code-feature-flow.git ~/.claude/ski
 | You type | What happens |
 |---|---|
 | `/feature-flow add rate limiting to the login endpoint` | Design starts on that topic in the current repo: approaches to pick from, then a draft spec in its own worktree |
-| Pick **Sign off and implement** | Review runs; then the same session builds |
+| Pick **Sign off and build** | Review runs; then the same session builds |
 | Your answers to its questions | It carries on |
 | `status?`, any time during the build | The step checklist so far, the latest progress-log lines from the builder and its helpers, and what's still running |
 | **Feedback** (type it in Other), after **Ready to test** | It updates the spec if needed, has a subagent make the change (uncommitted), re-checks, and reports **Ready to test — round n** |

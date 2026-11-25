@@ -1,11 +1,11 @@
 ---
 name: feature-flow
-description: One session per feature, from spec to main, in the user's own window. /feature-flow <topic> designs the spec with the user inside a worktree of its own (the shared spec-format files set what a spec contains and how its review runs) and offers "Sign off and implement"; on that click the same session builds the spec through subagents (a builder on the model the spec chose, a Sonnet checker, /code-review), reports ready to test, takes feedback, and on "ship" lands on main and cleans up. /feature-flow resume <worktree-path> picks a feature back up in a new session; /feature-flow status lists every feature in flight and which need the user. User-invoked only — run it when the user types /feature-flow. Do NOT auto-trigger on "write a spec" (that is /spec) or "implement this" (an ordinary request).
+description: One session per feature, from spec to main, in the user's own window. /feature-flow <topic> designs the spec with the user inside a worktree of its own (the shared spec-format files set what a spec contains and how its review runs) and offers "Sign off and build"; on that click the same session builds the spec through subagents (a builder on the model the spec chose, a Sonnet checker, /code-review), reports ready to test, takes feedback, and on "ship" lands on main and cleans up. /feature-flow resume <worktree-path> picks a feature back up in a new session; /feature-flow status lists every feature in flight and which need the user. User-invoked only — run it when the user types /feature-flow. Do NOT auto-trigger on "write a spec" (that is /spec) or "implement this" (an ordinary request).
 ---
 
 # Feature flow
 
-**One feature, one session, one window.** The user designs the spec with you, clicks **Sign off and implement**, and you build it right here — delegating the work to subagents, which may start their own. The user tests, gives feedback, and says **ship**, all in this window. Never start another session for any of it (no `claude --bg`, no second window): the user talks to you and only you.
+**One feature, one session, one window.** The user designs the spec with you, clicks **Sign off and build**, and you build it right here — delegating the work to subagents, which may start their own. The user tests, gives feedback, and says **ship**, all in this window. Never start another session for any of it (no `claude --bg`, no second window): the user talks to you and only you.
 
 Between sign-off and "ready to test" you work without them, and pull them in only for decisions that are genuinely theirs.
 
