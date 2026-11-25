@@ -165,6 +165,13 @@
 > change since sign-off, Outcome changes first as old → new, and each code fix
 > made to match the spec. The checker checks the current Outcome. This replaces
 > a same-day "the signed spec wins" rule that defaulted to fixing the code.
+>
+> **Revision 2026-11-25 — time per step at the end.** Every `state.py set`
+> appends `{at, n, phase, round, waiting}` to a `history` list in the state file
+> (carried over from the pending design file). Before the worktree is removed at
+> ship or drop, `state.py times` turns it into a table of the ten steps: total
+> time, `×2` for steps re-run after feedback, the number of feedback rounds, and
+> the time spent waiting for the user. The final message shows it.
 
 `/feature-flow` replaces the spec-role / implementer-role pair with one
 session per spec. You drive the design in `/spec` as today, inside a worktree

@@ -13,6 +13,10 @@ tracked and disappears with the worktree at ship or drop.
 
   state.py clear
       Forget this window's pending design (abandoned before it got a worktree).
+
+  state.py times [--worktree PATH] [--json]
+      Time spent per overall step, with the part spent waiting for the user, from the
+      history every `set` appends. For the final ship or drop message.
       Writes the state with a UTC timestamp and this window's session id
       (CLAUDE_CODE_SESSION_ID), and composes the display step from the feature's ten
       overall steps: "4/10 Building", "9/10 Feedback round 2", "10/10 Ship". Design,
@@ -221,9 +225,85 @@ def cmd_set(a):
     else:
         state["waiting_since"] = None
 
+    # One history entry per `set`: what `times` turns into time per step.
+    history = state.get("history") if isinstance(state.get("history"), list) else []
+    history.append({"at": ts, "n": a.n, "phase": phase, "round": a.round,
+                    "waiting": bool(a.waiting)})
+    state["history"] = history[-HISTORY_MAX:]
     write_json(path, state)
     if pending and os.path.exists(pending):
         os.remove(pending)
+
+
+STEP_NAMES = {1: "Design", 2: "Spec committed", 3: "Copy set up", 4: "Building",
+              5: "Validating", 6: "Review and commit", 7: "Checks", 8: "Ready to test",
+              9: "Feedback", 10: "Ship"}
+HISTORY_MAX = 2000
+
+
+def short_time(seconds):
+    m = int(seconds // 60)
+    if m < 1:
+        return "<1m"
+    if m < 60:
+        return "%dm" % m
+    return "%dh %02dm" % (m // 60, m % 60)
+
+
+def step_times(state, now):
+    """Per overall step: total seconds, seconds waiting for the user, how many separate
+    runs it had (steps 5-8 run again after feedback), and feedback rounds."""
+    hist = sorted((h for h in state.get("history") or [] if h.get("at") and h.get("n")),
+                  key=lambda h: h["at"])
+    steps = {}
+    prev_n, prev_round, rounds = None, None, 0
+    for i, h in enumerate(hist):
+        start = parse_iso(h["at"])
+        end = parse_iso(hist[i + 1]["at"]) if i + 1 < len(hist) else now
+        secs = max(0, (end - start).total_seconds())
+        st = steps.setdefault(h["n"], {"total": 0, "waiting": 0, "runs": 0, "phase": h.get("phase")})
+        st["total"] += secs
+        if h.get("waiting"):
+            st["waiting"] += secs
+        if h["n"] != prev_n:
+            st["runs"] += 1
+        if h["n"] == 9 and (prev_n != 9 or h.get("round") != prev_round):
+            rounds += 1
+        prev_n, prev_round = h["n"], h.get("round")
+    return steps, rounds
+
+
+def cmd_times(a):
+    """The time spent per overall step, for the ship or drop message."""
+    worktree = os.path.abspath(a.worktree) if a.worktree else find_checkout(os.getcwd())
+    git_dir = linked_git_dir(worktree) if worktree else None
+    state = load_json(os.path.join(git_dir, STATE_NAME)) if git_dir else {}
+    if not state.get("history"):
+        sys.exit("state.py times: no step history (the feature started before it was recorded)")
+    steps, rounds = step_times(state, now_utc())
+    if a.json:
+        json.dump({"steps": steps, "feedback_rounds": rounds}, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+        return
+    rows, total, waiting = [], 0, 0
+    for n in range(1, OVERALL_STEPS + 1):
+        name = STEP_NAMES[n]
+        st = steps.get(n)
+        if n == 10 and st and st.get("phase") == "drop":
+            name = "Drop"
+        if n == 9 and rounds:
+            name = "Feedback (%d round%s)" % (rounds, "" if rounds == 1 else "s")
+        if not st:
+            rows.append((n, name, "skipped" if n == 9 else "-", "", ""))
+            continue
+        total += st["total"]
+        waiting += st["waiting"]
+        rows.append((n, name, short_time(st["total"]), "×%d" % st["runs"] if st["runs"] > 1 else "",
+                     short_time(st["waiting"]) if st["waiting"] >= 60 else ""))
+    print("Time per step                    total         waiting for you")
+    for n, name, t, runs, w in rows:
+        print("%2d %-26s %8s  %-4s %10s" % (n, name, t, runs, w))
+    print("   %-26s %8s  %-4s %10s" % ("Total", short_time(total), "", short_time(waiting)))
 
 
 def cmd_clear(a):
@@ -345,6 +425,9 @@ def main():
     s.add_argument("--spec")
     s.add_argument("--waiting", help="what the user needs to do; omit when working")
     sub.add_parser("clear", help="forget this window's pending design")
+    t = sub.add_parser("times", help="time spent per overall step (for the ship or drop message)")
+    t.add_argument("--worktree", help="the feature's worktree, when not running inside it")
+    t.add_argument("--json", action="store_true")
     st = sub.add_parser("status")
     st.add_argument("--json", action="store_true")
     st.add_argument("--roots")
@@ -355,6 +438,8 @@ def main():
         cmd_status(a)
     elif a.cmd == "clear":
         cmd_clear(a)
+    elif a.cmd == "times":
+        cmd_times(a)
     else:
         p.print_help()
         sys.exit(2)

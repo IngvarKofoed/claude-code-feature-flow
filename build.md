@@ -247,8 +247,8 @@ Print its checklist first and tick it as you go — `Ship: <title>` with `· Val
    - Refused because `main` moved: `EnterWorktree` (`path`) back in and go to step 2.
    - Refused because uncommitted changes in the main checkout are in the way: tell the user exactly which files and wait. Never commit, stash or discard their work.
 8. **Push:** `git push origin main`. Rejected because `origin` moved: `EnterWorktree` back in and go to step 2.
-9. **Clean up:** `git worktree remove <worktree path> && git branch -d <branch>`.
-10. Final message: `Shipped: <title>` with the pushed commit, and that this feature is finished: the session is back in the main checkout, so `/clear` and a new `/feature-flow` start the next feature in this same window.
+9. **Clean up:** first save the time per step, since it goes with the worktree: `python3 <this skill's folder>/state.py times --worktree <worktree path>`. Then `git worktree remove <worktree path> && git branch -d <branch>`.
+10. Final message: `Shipped: <title>` with the pushed commit, then the time-per-step table from step 9 as printed, in a code block (each step's total, `×2` where it ran again after feedback, and the time spent waiting for the user), and that this feature is finished: the session is back in the main checkout, so `/clear` and a new `/feature-flow` start the next feature in this same window.
 
 ## 10. Drop, instead of ship
 
@@ -257,8 +257,8 @@ When the user picks **Drop**, or says drop (or abandon, scrap it):
 1. Confirm first with AskUserQuestion: dropping deletes the worktree and its branch, including the spec; it can be recovered from a commit SHA for a while. **Drop it** / **Keep it**.
 2. Commit everything, uncommitted feedback included: `git add -A && git commit -m "WIP: <title> (dropped)"`.
 3. Stop every process you started, then `ExitWorktree` with action `keep`.
-4. From the main checkout: `git worktree remove <worktree path> && git branch -D <branch>`.
-5. Final message: `Dropped: <title>`, the WIP commit's SHA, and that `git branch <branch> <sha>` in the main checkout brings it all back (until git garbage-collects it). Like ship, it ends with `/clear` and a new `/feature-flow` starting the next feature in this window.
+4. From the main checkout: save the time per step first (`python3 <this skill's folder>/state.py times --worktree <worktree path>`), then `git worktree remove <worktree path> && git branch -D <branch>`.
+5. Final message: `Dropped: <title>`, the time-per-step table from step 4 in a code block, the WIP commit's SHA, and that `git branch <branch> <sha>` in the main checkout brings it all back (until git garbage-collects it). Like ship, it ends with `/clear` and a new `/feature-flow` starting the next feature in this window.
 
 ## Picking up
 
