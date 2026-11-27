@@ -138,19 +138,22 @@ Loop, with new open questions in a new picker, until none remain and the user ha
 
 ## 6. Sign-off
 
-Sign-off is explicit, or it hasn't happened. When the spec is ready (every question answered and folded in), first show **Here's what you get**, read from the spec on disk, so the user signs what they can see:
+Sign-off is explicit, or it hasn't happened. When the spec is ready (every question answered and folded in), ask for it with **Here's what you get** inside the picker, read from the spec on disk, so the user signs what they can see:
 
 - Outcome's **What you get** and **How to verify** bullets;
 - the Implementation strategy's headline;
 - one line on what changed since the user last saw the spec (their answers, their markup, your fixes), or "nothing changed".
 
-Then ask, in one AskUserQuestion, *"Do you sign off on this spec?"* with exactly these options, in this order:
+Ask in one AskUserQuestion, *"Do you sign off on this spec?"*, with exactly these options, in this order. Give every option the same `preview`: the block above, as short markdown lines, since it sits in a narrow box beside the options. The same preview on all three keeps it in view whichever one is highlighted.
 
 - **Sign off and build (Recommended)**: "Builds it here once the fresh-eyes review is back with nothing for you to decide."
 - **Sign off, build later**: "Commits the spec once the review is handled; you start the build when you want."
 - **Not yet — more changes**: "Mark the file up with `////`, or type what to change in Other."
 
 Text typed in Other is a change request. Never put this picker next to a question that's still open.
+
+- **The preview is where the block goes,** not chat text before the picker: that text may be off screen while the picker is open.
+- **Keep the question to that one line.** A summary of the design in the question is not What you get, and doesn't replace the preview.
 
 **Start the review in the same turn,** in the background, just before the picker goes out, so it runs while the user reads. Start it per `review.md`'s "Starting a review", and note the spec's hash. Skip the launch only if a review is already running, or has finished, on this exact text.
 
